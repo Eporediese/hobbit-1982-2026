@@ -22,8 +22,7 @@
     "description": "A well-worn map of the Wilderland, marking the road east to the Lonely Mountain. A note in the corner mentions moon-letters on the back, readable only by the same moon and season under which they were written -- you'd need to find somewhere suitably moonlit to make them out.",
     "type": "misc",
     "weight": 1,
-    "added": true,
-    "bugfix_note": "Bugfix: Bag End's description used to mention a map hanging by the door, but there was no actual item there -- examining or taking it did nothing. It's now a real, carryable, examinable item."
+    "added": true
   },
   "torch": {
     "name": "torch",
@@ -46,8 +45,7 @@
     "description": "A small elvish blade that glows blue when goblins or orcs are near.",
     "type": "weapon",
     "damage": 7,
-    "weight": 3,
-    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself)."
+    "weight": 3
   },
   "orcrist": {
     "name": "Orcrist",
@@ -153,8 +151,7 @@
     "description": "A roasted leg of mutton.",
     "type": "food",
     "food_value": 40,
-    "weight": 2,
-    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself)."
+    "weight": 2
   },
   "gold_coins_small": {
     "name": "small pile of gold coins",
@@ -165,7 +162,6 @@
     "description": "A modest pile of gold coins, plunder from the trolls' hoard.",
     "type": "treasure",
     "weight": 6,
-    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself).",
     "value": 60
   },
   "rope": {

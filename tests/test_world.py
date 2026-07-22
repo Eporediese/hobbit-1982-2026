@@ -68,16 +68,12 @@ def test_every_location_reachable_from_bag_end():
     assert not unreachable, f"unreachable locations: {unreachable}"
 
 
-def test_room_has_its_own_bugfix_note_whenever_its_scenery_does():
-    """Regression: a room's own description can be the thing that was
-    fixed (e.g. a false 'this leads somewhere' promise), and a plain
-    'look' should surface that -- not just 'examine <the specific noun>'.
-    Every location with at least one scenery bugfix_note must also carry
-    a location-level one."""
-    world = World.load(DATA_DIR / "locations.json")
-    offenders = []
-    for loc in world.locations.values():
-        has_scenery_bugfix = any(s.bugfix_note for s in loc.scenery)
-        if has_scenery_bugfix and not loc.bugfix_note:
-            offenders.append(loc.id)
-    assert not offenders, f"locations missing a room-level bugfix_note: {offenders}"
+def test_no_location_data_still_carries_bugfix_commentary():
+    """The amber annotation layer was removed; the data files should not be
+    quietly hoarding notes that nothing renders any more."""
+    import json
+    raw = json.loads((DATA_DIR / "locations.json").read_text(encoding="utf-8"))
+    offenders = [k for k, v in raw.items()
+                 if v.get("bugfix_note")
+                 or any(s.get("bugfix_note") for s in v.get("scenery", []))]
+    assert not offenders, f"locations still carrying bugfix_note: {offenders}"

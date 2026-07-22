@@ -11,7 +11,7 @@ from . import ui
 from .combat import resolve_attack
 from .entities import Character
 from .parser import FREE_VERBS, Command
-from .ui import BugfixNote, Note
+from .ui import Note
 from .world import OPPOSITE
 
 if TYPE_CHECKING:
@@ -380,17 +380,11 @@ def do_open(game: "Game", actor: Character, cmd: Command) -> list[str]:
         if not neighbor.locked:
             return ["It's already open."]
         if neighbor.key_item in actor.inventory:
-            return _open_locked_room(actor, neighbor, game) + [BugfixNote(
-                "Bugfix: 'open' used to only check the room you were standing in, so "
-                "locked rooms reached through an exit (like this one) could never "
-                "actually be unlocked. It now checks the room the door leads to."
-            )]
+            return _open_locked_room(actor, neighbor, game)
         return [_locked_hint(game, neighbor)]
     scenery = loc.find_scenery(cmd.obj)
     if scenery:
         messages = ["It's already open.", Note(_scenery_text(scenery, loc))]
-        if scenery.bugfix_note:
-            messages.append(BugfixNote(scenery.bugfix_note))
         return messages
     if cmd.obj in loc.name.lower() or cmd.obj in _DOOR_WORDS:
         return ["It's already open."]
@@ -416,13 +410,7 @@ def do_close(game: "Game", actor: Character, cmd: Command) -> list[str]:
 
     neighbor = _find_lockable_neighbor(game, loc, cmd.obj)
     if not neighbor:
-        return ["There's nothing here with a lock -- it can't be closed shut.",
-                 BugfixNote(
-                     "Bugfix: 'close' used to lock whatever room you were standing in, "
-                     "even ones with no key defined for them at all -- which could seal "
-                     "off your only way out with no way back in. It now only locks a "
-                     "neighboring room that actually has a lock."
-                 )]
+        return ["There's nothing here with a lock -- it can't be closed shut."]
     if neighbor.locked:
         return ["It's already closed."]
     neighbor.locked = True
@@ -468,8 +456,6 @@ def do_look(game: "Game", actor: Character, cmd: Command) -> list[str]:
 def _describe_item(game: "Game", item_id: str) -> list[str]:
     item = game.items.get(item_id)
     messages = [Note(item.description) if item.added else item.description]
-    if item.bugfix_note:
-        messages.append(BugfixNote(item.bugfix_note))
     return messages
 
 
@@ -479,8 +465,6 @@ def _describe_map(game: "Game", actor: Character, loc) -> list[str]:
     (with a reminder, once you've read them)."""
     item = game.items.get("thorin_map")
     messages: list[str] = [Note(item.description)]
-    if item.bugfix_note:
-        messages.append(BugfixNote(item.bugfix_note))
     if loc.moonlit:
         first = not game.moon_letters_read
         game.moon_letters_read = True
@@ -530,8 +514,6 @@ def do_examine(game: "Game", actor: Character, cmd: Command) -> list[str]:
     scenery = None if game.authentic else loc.find_scenery(cmd.obj)
     if scenery:
         messages = [Note(_scenery_text(scenery, loc))]
-        if scenery.bugfix_note:
-            messages.append(BugfixNote(scenery.bugfix_note))
         return messages
     return [f"You see no {cmd.obj} here."]
 
@@ -879,10 +861,9 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
     else:
         lines.append(Note(
             "You are playing the ENHANCED game, with added features shown in cyan. "
-            "'annotate verbose' also shows, in amber, where a bug in this recreation "
-            "was fixed; 'annotate standard' hides those again. The purist game is a "
-            "separate choice made at the start ('python main.py --purist'), not a "
-            "switch you can throw mid-journey. 'mode' reports which you're in."))
+            "The purist game is a separate choice made at the start "
+            "('python main.py --purist'), not a switch you can throw mid-journey. "
+            "'mode' reports which you're in."))
     return lines
 
 
@@ -890,8 +871,7 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
 # mid-journey: purist reverts content AND mechanics (the map is wall flavour
 # again, locks misbehave, the Elvenking's gate is not barred and there are no
 # barrels), so flipping halfway would rearrange the world around a company
-# already standing in it. Annotation verbosity only affects what is printed,
-# so that stays free to change.
+# already standing in it.
 _MODE_IS_FIXED = ("The mode is settled when the game begins and cannot be changed "
                   "mid-journey -- purist and enhanced are different worlds, not two "
                   "views of one. Start with 'python main.py --purist' for the raw "
@@ -903,9 +883,8 @@ def do_mode(game: "Game", actor: Character, cmd: Command) -> list[str]:
         return ["Mode: PURIST (1982-flavoured). Reverted content and the original "
                 "broken locks -- some rooms are unreachable, and the game may not "
                 "be winnable.", Note(_MODE_IS_FIXED)]
-    return [f"Mode: ENHANCED, annotation '{game.annotation_level}'. Corrected "
-            "descriptions, the map as a real item, working locks and scenery. "
-            "'annotate verbose' also shows where bugs were fixed.",
+    return ["Mode: ENHANCED. Corrected descriptions, the map as a real item, "
+            "working locks and scenery. Additions are shown in cyan.",
             Note(_MODE_IS_FIXED)]
 
 
@@ -913,20 +892,6 @@ def do_purist(game: "Game", actor: Character, cmd: Command) -> list[str]:
     if game.authentic:
         return ["You are already playing the purist game."]
     return [Note(_MODE_IS_FIXED)]
-
-
-def do_annotate(game: "Game", actor: Character, cmd: Command) -> list[str]:
-    level = (cmd.obj or "").strip().lower()
-    if game.authentic:
-        return ["Nothing is annotated in the 1982 game.", Note(_MODE_IS_FIXED)]             if level else ["Nothing is annotated in the 1982 game."]
-    if level in ("", "status", "level"):
-        return [f"Annotation: {game.annotation_level}. Options: standard, verbose."]
-    if level == "purist":
-        return [Note(_MODE_IS_FIXED)]
-    if level not in ("standard", "verbose"):
-        return [f"Unknown annotation level '{level}'. Options: standard, verbose."]
-    game.annotation_level = level
-    return [f"Annotation level set to {level}."]
 
 
 DISPATCH = {
@@ -940,7 +905,7 @@ DISPATCH = {
     "unfollow": do_unfollow,
     "stock": do_stock, "status": do_status, "party": do_party,
     "save": do_save, "load": do_load, "quit": do_quit, "help": do_help,
-    "purist": do_purist, "annotate": do_annotate, "mode": do_mode,
+    "purist": do_purist, "mode": do_mode,
 }
 
 
@@ -968,11 +933,11 @@ def execute(game: "Game", actor: Character, cmd: Command) -> list[str]:
     if actor.is_fainted() and not _may_act_while_fainted(game, cmd.verb):
         messages = [ui.sentence(f"{actor.name} is too weak from hunger and fatigue to act.")]
         if actor.id == "bilbo" and not game.authentic:
-            messages.append(BugfixNote(
-                "Bugfix: collapsed from hunger, the original refused every command "
-                "-- including the eating and resting it told you to do, so there "
-                "was no way out but death. You can still eat, rest, and wait -- but "
-                "not fight or march, so provision yourself before it comes to this."))
+            # Not changelog -- the one thing a collapsed player needs to know
+            # is that there IS a way back, and which commands still reach it.
+            messages.append(Note(
+                "You can still eat, rest and wait -- but not fight or march. "
+                "Eat, if you have anything left to eat."))
         return messages
     handler = DISPATCH.get(cmd.verb)
     if not handler:

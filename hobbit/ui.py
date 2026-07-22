@@ -2,22 +2,20 @@
 
 Some things in this recreation are not in the 1982 original -- the scenery
 examine system, and a few parser conveniences (command chaining, direct
-NPC addressing). Those messages are wrapped in Note(). Separately, a few
-messages exist specifically to describe a defect that was found and fixed
-during development (e.g. a room description that used to promise an exit
-that didn't exist) -- those are wrapped in BugfixNote().
+NPC addressing). Those messages are wrapped in Note().
 
-Three annotation levels control what the player actually sees, chosen with
-the in-game 'purist'/'annotate' commands (see commands.py):
+There are two ways to see the game, settled when it starts (see commands.py):
 
-  purist    -- no color, no meta-commentary. Note text still appears (it's
-               real game content, just newly written) but unflagged, and
-               BugfixNote text is suppressed entirely (it's changelog
-               trivia with no in-fiction value).
-  standard  -- the default. Note text is colored cyan. BugfixNote text is
-               still suppressed.
-  verbose   -- Note text colored cyan, and BugfixNote text also shown,
-               colored amber, explaining exactly what was fixed and where.
+  purist    -- no colour, no meta-commentary. Note text still appears (it's
+               real game content, just newly written) but unflagged.
+  standard  -- the default. Note text is coloured cyan, so you can always
+               tell a modern addition from 1982.
+
+There used to be a third, 'verbose', which annotated in amber exactly which
+defect each fix addressed. It was dropped: keeping that commentary accurate
+meant re-documenting the whole game every time it changed, and a player who
+wants the unimproved article can simply play purist, which *is* the original
+design rather than a description of it.
 """
 from __future__ import annotations
 
@@ -25,9 +23,8 @@ import os
 
 RESET = "\033[0m"
 ADDITION_COLOR = "\033[96m"  # bright cyan
-BUGFIX_COLOR = "\033[93m"  # amber/yellow
 
-LEVELS = ("purist", "standard", "verbose")
+LEVELS = ("purist", "standard")
 DEFAULT_LEVEL = "standard"
 
 
@@ -43,12 +40,6 @@ def note_line(text: str) -> str:
 
 class Note(str):
     """A message flagged as a modern addition, not part of the 1982 original."""
-    __slots__ = ()
-
-
-class BugfixNote(str):
-    """A message that specifically calls out a fixed defect -- development
-    changelog commentary, not in-fiction content."""
     __slots__ = ()
 
 
@@ -139,12 +130,9 @@ def autolook_lines(described: list[str]) -> list[str]:
     """Turn a describe_location() result into an auto-look shown after a
     move: only the room title (== Name ==) is coloured, marking it as the
     modern auto-look; the description, occupants, items, and exits stay in
-    normal formatting. Any trailing BugfixNote keeps its own semantics."""
+    normal formatting."""
     out: list[str] = []
     for line in described:
-        if isinstance(line, BugfixNote):
-            out.append(line)
-            continue
         rows = line.split("\n")
         if rows and rows[0].startswith("=="):
             rows[0] = f"{ADDITION_COLOR}{rows[0]}{RESET}"
@@ -163,10 +151,9 @@ def _apply_inline_marks(message: str, level: str) -> str:
 
 
 def present(messages: list[str], level: str = DEFAULT_LEVEL) -> list[str]:
-    """Filter and color a batch of messages according to the current
-    annotation level. BugfixNote lines are dropped entirely below
-    'verbose'; Note lines (and inline mark() spans) are always kept,
-    colored at 'standard'/'verbose' and left plain at 'purist'."""
+    """Colour a batch of messages for the game being played. Note lines (and
+    inline mark() spans) are always kept -- they're real content -- coloured
+    at 'standard' and left plain at 'purist'."""
     out: list[str] = []
     for message in messages:
         # Several characters are named in lower case on purpose ("wood-elf
@@ -175,14 +162,10 @@ def present(messages: list[str], level: str = DEFAULT_LEVEL) -> list[str]:
         # the one place everything is rendered, saves remembering it at every
         # message that happens to begin with a name.
         message = sentence(message) if type(message) is str else message
-        if isinstance(message, BugfixNote):
-            if level == "verbose":
-                out.append(f"{BUGFIX_COLOR}{sentence(str(message))}{RESET}")
-            continue
         if isinstance(message, Note):
             text = sentence(str(message))
             out.append(f"{ADDITION_COLOR}{text}{RESET}"
-                       if level in ("standard", "verbose") else text)
+                       if level != "purist" else text)
             continue
         out.append(_apply_inline_marks(message, level))
     return out

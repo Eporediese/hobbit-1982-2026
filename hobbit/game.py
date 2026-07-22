@@ -83,11 +83,11 @@ _COLLAPSE_PATTERNS: list[tuple[re.Pattern, str]] = [
 
 def _collapse_company_messages(messages: list[str]) -> list[str]:
     """Collapse runs of near-identical per-character lines ('X goes east.'
-    x13) into one company-wide line. Notes/BugfixNotes pass through."""
+    x13) into one company-wide line. Notes pass through."""
     keyed: list[tuple[str | None, str | None, str]] = []
     counts: dict[str, int] = {}
     for msg in messages:
-        if type(msg) is not str:  # keep Note/BugfixNote subclasses untouched
+        if type(msg) is not str:  # keep Note subclasses untouched
             keyed.append((None, None, msg))
             continue
         for pattern, template in _COLLAPSE_PATTERNS:
@@ -114,18 +114,14 @@ def _collapse_company_messages(messages: list[str]) -> list[str]:
 class Game:
     def __init__(self, seed: int | None = None, authentic: bool = False,
                  llm=None):
-        # annotation_level is a single spectrum from most-original to
-        # most-annotated:
-        #   'purist'   -- the raw 1982-flavored experience (a.k.a. authentic):
+        # There are two games, settled at the start and held for the journey:
+        #   'purist'   -- the raw 1982-flavoured experience (a.k.a. authentic):
         #                 reverted descriptions, added items are back to being
-        #                 unexaminable wall flavor, the scenery system is off,
+        #                 unexaminable wall flavour, the scenery system is off,
         #                 and open/close use the original quirky current-room
         #                 logic (so some rooms are unreachable).
         #   'standard' -- the enhanced game; added features shown in cyan.
-        #   'verbose'  -- enhanced, plus amber notes on where bugs were fixed.
         # The 'authentic' argument is just sugar for starting in 'purist'.
-        # Everything the mode changes is applied at render/command time (see
-        # the `authentic` property and its uses), so it works as a live toggle.
         self.annotation_level = "purist" if authentic else ui.DEFAULT_LEVEL
         # When an LLM client is supplied, party NPCs get the hybrid LLMBrain
         # (AI dialogue + narration over the same rule-based actions). Absent
@@ -1045,30 +1041,22 @@ class Game:
 
     def describe_location(self, actor: Character) -> list[str]:
         """Returns a list of display lines, not a single string: the main
-        room block is one joined line, with an optional trailing
-        BugfixNote when this room used to be unreachable due to a fixed
-        bug, so callers can color/filter it independently via ui.present."""
+        room block is one joined line, so callers can colour it via ui.present."""
         loc = self.world.get(actor.location_id)
-        # In authenticity mode we use the pre-fix prose, drop the added-feature
-        # clause, and never append the bugfix commentary -- the point of that
-        # mode is the raw experience.
+        # In authenticity mode we use the pre-fix prose and drop the
+        # added-feature clause -- the point of that mode is the raw experience.
         if self.authentic:
             description = loc.original_description
-            bugfix = None
         else:
             description = loc.description
             if loc.added_description:
                 # Colour just the added clause (marks the new provisioning feature).
                 description = f"{description} {ui.mark(loc.added_description)}"
-            bugfix = loc.bugfix_note
 
         lines = [f"== {loc.name} =="]
         if loc.dark and actor.light_remaining <= 0:
             lines.append("It is pitch dark. You can make out very little.")
-            result = ["\n".join(lines)]
-            if bugfix:
-                result.append(ui.BugfixNote(bugfix))
-            return result
+            return ["\n".join(lines)]
         lines.append(description)
         # Split live occupants into companions and hostile monsters, so a
         # room only announces monsters while they're actually alive there
@@ -1121,10 +1109,7 @@ class Game:
         if loc.graves:
             word = "A cairn stands" if len(loc.graves) == 1 else "Cairns stand"
             lines.append(f"{word} here, raised over {_join_names(loc.graves)}.")
-        result = ["\n".join(lines)]
-        if bugfix:
-            result.append(ui.BugfixNote(bugfix))
-        return result
+        return ["\n".join(lines)]
 
     # -- turn processing -----------------------------------------------
     def process_player_input(self, text: str) -> list[str]:

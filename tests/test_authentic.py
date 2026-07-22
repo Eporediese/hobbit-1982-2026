@@ -45,9 +45,9 @@ def test_scenery_examine_disabled_in_authentic_mode():
     assert any("you see no" in m.lower() for m in messages)
 
 
-def test_purist_shows_no_bugfix_notes():
-    """purist == authentic: content is reverted, so there is no bugfix
-    commentary to show (that's a property of the enhanced game)."""
+def test_purist_shows_no_meta_commentary():
+    """purist == authentic: the raw article, with nothing of this recreation
+    talking over it."""
     from hobbit import ui
     game = Game(seed=1, authentic=True)  # purist
     game.player.location_id = "bag_end_garden"

@@ -213,4 +213,5 @@ actually carried out.
 In purist mode `open` misbehaves exactly as the original's did, which leaves
 **the Trolls' Cave, the Goblin Dungeon and the Secret Door** permanently
 unreachable -- and the game may not be winnable. That is the point of the mode.
-The enhanced game fixes it and, at `annotate verbose`, tells you where and why.
+The enhanced game fixes it: `open` checks the room the door leads to, rather
+than only the one you are standing in.

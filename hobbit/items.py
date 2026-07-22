@@ -33,12 +33,10 @@ class ItemDef:
         # A walking staff: eases the march when in hand, though a poor weapon.
         self.walking_aid: bool = data.get("walking_aid", False)
         # Set only for items that are themselves an added feature (e.g. a prop
-        # that used to be pure unexaminable flavor text and is now a real,
-        # examinable item) -- shown in color at the 'standard'/'verbose'
-        # annotation levels. bugfix_note additionally explains what was wrong,
-        # shown only at 'verbose'.
+        # that used to be pure unexaminable flavour text and is now a real,
+        # examinable item) -- shown in colour in the enhanced game, plain in
+        # purist.
         self.added: bool = data.get("added", False)
-        self.bugfix_note: str | None = data.get("bugfix_note")
 
     @property
     def is_weapon(self) -> bool:

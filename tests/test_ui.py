@@ -1,35 +1,30 @@
 from hobbit.game import Game
-from hobbit.ui import BugfixNote, Note, present
+from hobbit.ui import Note, present
 
 
 def test_present_purist_strips_color_but_keeps_note_text():
+    """Note text is real content, just newly written -- purist shows it
+    unflagged rather than hiding it."""
     out = present([Note("Added feature")], level="purist")
     assert out == ["Added feature"]
 
 
-def test_present_standard_colors_note_but_hides_bugfix():
-    out = present([Note("Added feature"), BugfixNote("fixed thing")], level="standard")
+def test_present_standard_colors_notes():
+    out = present([Note("Added feature")], level="standard")
     assert len(out) == 1
     assert "Added feature" in out[0]
     assert "\033[96m" in out[0]
 
 
-def test_present_verbose_shows_both_colored():
-    out = present([Note("added feature"), BugfixNote("fixed thing")], level="verbose")
-    assert len(out) == 2
-    assert "\033[96m" in out[0]
-    assert "\033[93m" in out[1]
-
-
 def test_present_leaves_plain_messages_alone_but_for_the_opening_letter():
-    for level in ("purist", "standard", "verbose"):
+    for level in ("purist", "standard"):
         assert present(["Plain narrative"], level=level) == ["Plain narrative"]
 
 
 def test_present_capitalises_lines_that_open_with_a_lower_case_name():
     """Several characters are named in lower case on purpose ('wood-elf guard',
     'giant spider'), which reads right mid-line but not at the start of one."""
-    for level in ("purist", "standard", "verbose"):
+    for level in ("purist", "standard"):
         assert present(["giant spider looms here."], level=level) == \
             ["Giant spider looms here."]
         assert present([Note("wood-elf guard bars the way.")], level=level)[0] \
@@ -55,116 +50,73 @@ def test_the_mode_cannot_be_changed_mid_journey():
     assert game.annotation_level == "standard"        # unchanged
     assert "cannot be changed" in msgs
 
-    pure = Game(seed=1, authentic=True)
-    pure.process_player_input("annotate standard")
-    assert pure.annotation_level == "purist"          # and no way back out
 
-
-def test_annotate_command_sets_and_reports_level():
+def test_there_is_no_annotate_command_any_more():
+    """The verbose/amber commentary layer was removed: keeping it accurate
+    meant re-documenting the whole game on every change, and a player who
+    wants the unimproved article can just play purist."""
     game = Game(seed=1)
-    game.process_player_input("annotate verbose")
-    assert game.annotation_level == "verbose"
-    messages = game.process_player_input("annotate")
-    assert any("verbose" in m for m in messages)
-
-
-def test_annotate_rejects_unknown_level():
-    game = Game(seed=1)
-    messages = game.process_player_input("annotate nonsense")
-    assert any("unknown annotation level" in m.lower() for m in messages)
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("annotate verbose")).lower()
+    assert "don't know how" in msgs or "didn't understand" in msgs
     assert game.annotation_level == "standard"
 
 
-def test_bugfix_note_only_surfaces_at_verbose_for_the_garden_gate():
+def test_mode_reports_which_game_you_are_in():
     game = Game(seed=1)
-    game.player.location_id = "bag_end_garden"
-    for level, expect_bugfix in (("purist", False), ("standard", False), ("verbose", True)):
-        game.annotation_level = level
-        from hobbit import ui
-        raw = game.process_player_input("examine gate")
-        shown = ui.present(raw, level)
-        has_bugfix_text = any("bugfix" in m.lower() for m in shown)
-        assert has_bugfix_text is expect_bugfix
+    assert any("ENHANCED" in str(m) for m in game.process_player_input("mode"))
+    pure = Game(seed=1, authentic=True)
+    assert any("PURIST" in str(m) for m in pure.process_player_input("mode"))
 
 
-def test_examine_map_by_level():
+def test_examine_map_by_game():
     from hobbit import ui
     game = Game(seed=1)
 
-    # purist == authentic: the map is unexaminable wall flavor, as in 1982
+    # purist == authentic: the map is unexaminable wall flavour, as in 1982
     game.annotation_level = "purist"
-    raw = game.process_player_input("examine map")
-    shown = ui.present(raw, "purist")
+    shown = ui.present(game.process_player_input("examine map"), "purist")
     assert any("no map" in m.lower() for m in shown)
     assert not any("moon-letters" in m.lower() for m in shown)
 
-    # standard: real item, description colored cyan, no bugfix commentary
+    # standard: real item, description coloured cyan
     game.annotation_level = "standard"
-    raw = game.process_player_input("examine map")
-    shown = ui.present(raw, "standard")
+    shown = ui.present(game.process_player_input("examine map"), "standard")
     assert any("\033[96m" in m and "moon-letters" in m.lower() for m in shown)
-    assert not any("bugfix" in m.lower() for m in shown)
-
-    # verbose: cyan description plus amber bugfix note
-    game.annotation_level = "verbose"
-    raw = game.process_player_input("examine map")
-    shown = ui.present(raw, "verbose")
-    assert any("\033[93m" in m and "bugfix" in m.lower() for m in shown)
 
 
 def test_plain_items_stay_uncolored_when_examined():
     from hobbit import ui
     game = Game(seed=1)
-    raw = game.process_player_input("examine torch")
-    shown = ui.present(raw, "verbose")
+    shown = ui.present(game.process_player_input("examine torch"), "standard")
     assert not any("\033[" in m for m in shown)
 
 
-def test_previously_unreachable_room_shows_bugfix_note_only_at_verbose():
+def test_previously_unreachable_room_still_describes_itself():
+    """The room used to carry amber commentary about having been unreachable.
+    The commentary is gone; the room, and its description, must not be."""
     from hobbit import ui
     game = Game(seed=1)
     game.player.location_id = "troll_cave"
-    game.player.light_remaining = 10  # room is dark; needs light to see description
+    game.player.light_remaining = 10  # room is dark; needs light to see it
 
-    for level, expect_bugfix in (("purist", False), ("standard", False), ("verbose", True)):
+    for level in ("purist", "standard"):
         game.annotation_level = level
-        raw = game.process_player_input("look")
-        shown = ui.present(raw, level)
-        has_bugfix = any("bugfix" in m.lower() for m in shown)
-        assert has_bugfix is expect_bugfix
-        # the room description itself must always be visible regardless of level
+        shown = ui.present(game.process_player_input("look"), level)
         assert any("trolls' cave" in m.lower() for m in shown)
-
-
-def test_room_without_bugfix_note_never_shows_one():
-    from hobbit import ui
-    game = Game(seed=1)
-    game.player.location_id = "hobbiton_road"  # a room with no bugfix_note
-    for level in ("purist", "standard", "verbose"):
-        game.annotation_level = level
-        raw = game.process_player_input("look")
-        shown = ui.present(raw, level)
         assert not any("bugfix" in m.lower() for m in shown)
 
 
-def test_troll_cave_items_get_bugfix_note_but_stay_uncolored_as_notes():
+def test_nothing_narrates_its_own_changelog_at_the_player():
+    """A sweep: with the amber layer gone, no message anywhere should still be
+    explaining to the player which defect it fixed."""
     from hobbit import ui
     game = Game(seed=1)
-    game.player.location_id = "troll_cave"
-    game.player.light_remaining = 10
-    game.player.inventory.append("sting")
-
-    game.annotation_level = "standard"
-    raw = game.process_player_input("examine sting")
-    shown = ui.present(raw, "standard")
-    # not a "new feature" (Note) -- Sting is faithful content, so no cyan
-    assert not any("\033[96m" in m for m in shown)
-    assert not any("bugfix" in m.lower() for m in shown)
-
-    game.annotation_level = "verbose"
-    raw = game.process_player_input("examine sting")
-    shown = ui.present(raw, "verbose")
-    assert any("\033[93m" in m and "bugfix" in m.lower() for m in shown)
+    game.player.inventory = ["sting", "thorin_map"]
+    for cmd in ("look", "examine map", "examine sting", "inventory",
+                "mode", "help", "status", "open door", "close door"):
+        for m in ui.present(game.process_player_input(cmd), "standard"):
+            assert "bugfix" not in m.lower(), f"{cmd!r} still mentions a bugfix: {m}"
 
 
 def test_inventory_listing_colors_only_the_added_item_name():
@@ -172,23 +124,21 @@ def test_inventory_listing_colors_only_the_added_item_name():
     game = Game(seed=1)
     game.player.inventory = ["thorin_map", "torch"]  # gear only, no loaves
 
-    raw = game.process_player_input("inventory")
-    line = raw[0]
+    line = game.process_player_input("inventory")[0]
 
     purist = ui.present([line], "purist")[0]
     assert purist.startswith("You are carrying: old map, torch.")
 
     standard = ui.present([line], "standard")[0]
     assert f"{ui.ADDITION_COLOR}old map{ui.RESET}" in standard
-    assert ", torch." in standard  # torch itself stays uncolored
-    assert standard.count(ui.ADDITION_COLOR) == 1  # only the map, not the whole line
+    assert ", torch." in standard  # torch itself stays uncoloured
+    assert standard.count(ui.ADDITION_COLOR) == 1  # only the map, not the line
 
 
 def test_you_see_line_colors_only_the_added_item_name():
     from hobbit import ui
     game = Game(seed=1)
-    raw = game.process_player_input("look")
-    line = next(m for m in raw if "You see" in m)
+    line = next(m for m in game.process_player_input("look") if "You see" in m)
 
     purist = ui.present([line], "purist")[0]
     assert "old map" in purist and "\033[" not in purist
@@ -202,10 +152,8 @@ def test_take_and_wield_messages_color_only_added_item_names():
     from hobbit import ui
     game = Game(seed=1)
 
-    raw = game.process_player_input("take map")
-    shown_standard = ui.present(raw, "standard")
-    assert any(f"{ui.ADDITION_COLOR}old map{ui.RESET}" in m for m in shown_standard)
+    shown = ui.present(game.process_player_input("take map"), "standard")
+    assert any(f"{ui.ADDITION_COLOR}old map{ui.RESET}" in m for m in shown)
 
-    raw = game.process_player_input("take torch")
-    shown_standard = ui.present(raw, "standard")
-    assert not any(ui.ADDITION_COLOR in m for m in shown_standard)
+    shown = ui.present(game.process_player_input("take torch"), "standard")
+    assert not any(ui.ADDITION_COLOR in m for m in shown)

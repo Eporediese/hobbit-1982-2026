@@ -11,7 +11,7 @@ STOPWORDS = {"the", "a", "an", "at", "my", "please"}
 # Commands that just report or manage things -- they cost no game time, so
 # checking your status doesn't make the whole company hungrier.
 FREE_VERBS = {"look", "examine", "inventory", "status", "party", "help",
-              "mode", "annotate", "purist", "save", "load", "quit"}
+              "mode", "purist", "save", "load", "quit"}
 
 DIRECTION_WORDS = {
     "north": "north", "n": "north",
@@ -58,7 +58,6 @@ VERB_SYNONYMS: dict[str, list[str]] = {
     "follow": ["follow"],
     "unfollow": ["unfollow", "stop following", "stop follow", "stop"],
     "purist": ["purist"],
-    "annotate": ["annotate", "annotations", "verbosity"],
     "mode": ["mode"],
     "status": ["status", "health", "condition"],
     "party": ["party", "company", "companions"],

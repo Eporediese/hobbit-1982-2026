@@ -12,7 +12,6 @@
       "torch",
       "thorin_map"
     ],
-    "bugfix_note": "Bugfix: the room used to state 'a well-worn map hangs by the door' as fixed prose, so it still said that even after you'd taken the map. The map is now a real item listed under 'You see', and the description no longer hardcodes it. (Authentic mode keeps the old flavor line, since there's no map item there.)",
     "scenery": [
       {
         "name": "door",
@@ -31,7 +30,6 @@
     "exits": {
       "north": "bag_end"
     },
-    "bugfix_note": "Bugfix: this room's description used to say the gate opened 'onto the lane', implying a second way out that was never built. The text you're reading now is the corrected version -- 'examine gate' has the specifics.",
     "scenery": [
       {
         "name": "gate",
@@ -39,8 +37,7 @@
           "low gate",
           "garden gate"
         ],
-        "description": "The garden gate is unlocked and swings freely, but it only opens onto a few more feet of flowerbed hemmed in by hedge. It isn't a through-route -- go north, back into Bag End, to reach the lane.",
-        "bugfix_note": "Bugfix: this room's description used to say the gate opened 'onto the lane', implying a second way out that was never actually built. The text now matches what's really here."
+        "description": "The garden gate is unlocked and swings freely, but it only opens onto a few more feet of flowerbed hemmed in by hedge. It isn't a through-route -- go north, back into Bag End, to reach the lane."
       },
       {
         "name": "door",
@@ -219,7 +216,6 @@
     "locked": true,
     "key_item": "key_troll_cave",
     "dark": true,
-    "bugfix_note": "Bugfix: this room was permanently unreachable before a fix to 'open' -- the command only ever checked the room you were standing in, never the locked room a door actually led to, so there was no way to unlock a cave you couldn't get inside to open. 'open'/'close' now target the neighboring room the exit leads to.",
     "scenery": [
       {
         "name": "sacks",
@@ -424,7 +420,6 @@
     "exits": {
       "south": "storm_ledge"
     },
-    "bugfix_note": "Bugfix: this room used to hint the crack below was reachable from here (it was never wired up as an exit). 'examine crack' has the specifics.",
     "scenery": [
       {
         "name": "crack",
@@ -432,8 +427,7 @@
           "mountainside",
           "view"
         ],
-        "description": "A dark crack splits the mountainside far below -- probably the same cave mouth you could reach from the storm-battered ledge to the south. There's no way down to it from up here; this ledge is just a lookout.",
-        "bugfix_note": "Bugfix: this used to say the crack 'looks like it might lead somewhere out of the weather', implying a route down from this ledge that was never wired up -- the same problem as the garden gate, caught during the follow-up audit."
+        "description": "A dark crack splits the mountainside far below -- probably the same cave mouth you could reach from the storm-battered ledge to the south. There's no way down to it from up here; this ledge is just a lookout."
       }
     ],
     "melee_width": 2
@@ -513,7 +507,6 @@
     "key_item": "key_goblin_cell",
     "dark": true,
     "region": "goblin",
-    "bugfix_note": "Bugfix: like the Trolls' Cave, this cell was permanently unreachable before 'open' was fixed to unlock the room a door leads to, rather than only the room you were already standing in -- which meant captured dwarves could never actually be freed.",
     "melee_width": 2
   },
   "gollum_lake_shore": {
@@ -936,7 +929,6 @@
     "exits": {
       "west": "lake_town_market"
     },
-    "bugfix_note": "Bugfix: this room used to dangle a 'give the black arrow to Bard' hook with no Bard NPC behind it. 'examine fishermen' has the specifics.",
     "scenery": [
       {
         "name": "fishermen",
@@ -944,8 +936,7 @@
           "rumors",
           "rumours"
         ],
-        "description": "The fishermen talk of little else but the dragon on the mountain, and argue about whether anything short of a miracle could bring it down.",
-        "bugfix_note": "Bugfix: this used to name-drop Bard and the black arrow as if giving him the arrow would matter -- but no Bard NPC exists in this build, so that was a hint pointing at content that isn't there. Softened to plain color."
+        "description": "The fishermen talk of little else but the dragon on the mountain, and argue about whether anything short of a miracle could bring it down."
       }
     ],
     "melee_width": 6
@@ -1042,7 +1033,6 @@
     },
     "locked": true,
     "key_item": "moon_key",
-    "bugfix_note": "Bugfix: this room itself was permanently unreachable before the same 'open' fix as the Trolls' Cave and Goblin Dungeon (the rooms beyond it were still reachable via the Front Gate, but this specific moon-letters puzzle room was not).",
     "scenery": [
       {
         "name": "keyhole",

@@ -38,10 +38,6 @@ class Scenery:
         # a keyhole reads as a riddle while it's locked and as a memory once
         # the key has turned. Falls back to the one description when unset.
         self.opened_description: str = data.get("opened_description", self.description)
-        # Set only for scenery whose text used to describe a bug (e.g. implying
-        # an exit that didn't exist) -- explains what was wrong and how it was
-        # fixed, shown only at the 'verbose' annotation level.
-        self.bugfix_note: str | None = data.get("bugfix_note")
 
     def matches(self, word: str) -> bool:
         word = word.lower()
@@ -70,11 +66,6 @@ class Location:
         self.key_item: str | None = data.get("key_item")
         self.hidden_items: list[str] = list(data.get("hidden_items", []))
         self.scenery: list[Scenery] = [Scenery(d) for d in data.get("scenery", [])]
-        # Set only for rooms that used to be permanently unreachable due to a
-        # fixed bug (e.g. a locked room 'open'/'close' could never actually
-        # unlock) -- surfaced by Game.describe_location, shown only at the
-        # 'verbose' annotation level.
-        self.bugfix_note: str | None = data.get("bugfix_note")
         # A settlement where travellers can refill their provisions, and the
         # fare it supplies -- Rivendell presses waybread on you, the Green
         # Dragon plain loaves.

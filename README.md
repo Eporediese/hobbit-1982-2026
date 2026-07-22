@@ -28,7 +28,7 @@ Core verbs: `go` (or a bare direction: `north`/`n`, `south`/`s`, `east`/`e`,
 `west`/`w`, `up`/`u`, `down`/`d`), `take`, `drop`, `attack`, `give X to Y`,
 `open`, `close`, `talk to`, `look`, `examine`, `inventory`, `eat`, `wear`,
 `remove`, `wield`, `sheathe`, `light`, `rest`, `wait`, `follow`, `unfollow`,
-`status`, `party`, `stock up`, `save`, `load`, `quit`, `help`.
+`status`, `party`, `stock up`, `mode`, `save`, `load`, `quit`, `help`.
 
 - Chain commands: `take sword and go north then attack troll`.
 - Command a companion directly by addressing them first: `thorin, attack the goblin`.
@@ -127,21 +127,14 @@ meta-commentary. It reproduces the *classes* of period jank; it is not a
 byte-exact reproduction of Beam Software's actual game, which was never
 available to copy from.
 
+In the enhanced game, anything added for this recreation is **shown in cyan**,
+so you can always tell a modern addition from 1982 without being lectured
+about it. That is the whole of the annotation: there is no commentary layer
+and nothing to configure.
+
 Command chaining (`and`/`then`) and addressing companions directly are kept in
 every mode -- they are *not* additions; the real 1982 game's Inglish parser
 genuinely supported both.
-
-### Annotation levels
-
-Within the enhanced game these control only what is *printed*, so they are free
-to change at any time:
-
-- `annotate standard` (default) -- added features are shown in cyan, so you can
-  always see what is a modern addition and what is 1982.
-- `annotate verbose` -- also shows in amber exactly where a bug in this
-  recreation was found and fixed, and why.
-- `annotate` alone reports the current level; `mode` describes which game
-  you're in.
 
 ## Architecture
 

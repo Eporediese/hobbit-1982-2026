@@ -65,13 +65,12 @@ def main() -> None:
         print("** PURIST MODE -- the raw 1982-flavored experience **")
         print("Reverted descriptions, the map as wall flavor only, no scenery/examine "
               "system, and the original quirky locks -- some rooms cannot be reached, "
-              "and the game may not be winnable. Type 'annotate standard' any time to "
-              "switch to the enhanced game.\n")
+              "and the game may not be winnable. For the enhanced game, start again "
+              "without --purist.\n")
     else:
         for line in ui.present([ui.Note(
-            "Text in this color marks something added for this recreation that "
+            "Text in this colour marks something added for this recreation that "
             "wasn't in the 1982 original -- everything else is in plain text. "
-            "'annotate verbose' also shows where bugs in this recreation were fixed. "
             "For the raw 1982 game instead, start again with --purist."
         )], game.annotation_level):
             print(line)
