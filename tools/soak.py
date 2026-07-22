@@ -59,7 +59,11 @@ def choose_command(game: Game, rng: random.Random) -> str:
             return "stock up"
     if player.fatigue > 55:
         return "rest"
-    if loc.dark and player.light_remaining <= 0 and "torch" in player.inventory:
+    # Light up before stepping into the dark, not after -- you cannot enter a
+    # dark room to discover you needed a light.
+    going_dark = any(game.world.get(d).dark for d in loc.exits.values())
+    if ((loc.dark or going_dark) and player.light_remaining <= 0
+            and any(game.items.get(i).is_light_source for i in player.inventory)):
         return "light torch"
 
     # Draw the best blade you have before swinging at anything.
@@ -204,8 +208,10 @@ def check_state(game: Game, found: Counter, examples: dict) -> None:
     for char in game.characters.values():
         seen.update(char.inventory)
     for item_id, n in seen.items():
-        # Food stacks by design -- a dozen loaves are a dozen loaves.
-        if n > 1 and not game.items.get(item_id).is_food:
+        # Food and torches are resupplied at havens, so several of each in the
+        # world at once is the design rather than a bug.
+        item = game.items.get(item_id)
+        if n > 1 and not (item.is_food or item.is_light_source):
             found["item exists in two places at once"] += 1
             examples.setdefault("item exists in two places at once",
                                 f"{item_id} x{n}")

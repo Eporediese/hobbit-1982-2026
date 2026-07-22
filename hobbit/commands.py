@@ -74,16 +74,39 @@ def do_go(game: "Game", actor: Character, cmd: Command) -> list[str]:
     # on regardless (and may blunder into goblin-held dark, as in the tale).
     if (actor.id == "bilbo" and dest.dark and actor.light_remaining <= 0
             and not game.player_can_see_in_dark(actor)):
-        return [f"It's pitch dark {direction} of here and you dare not go on without a light."]
+        # ...but never into a trap. A torch that gutters out in the middle of
+        # the tunnels leaves every way on dark, and a player who cannot move
+        # at all simply starves where they stand. The way you came is the one
+        # way you can still find by feel.
+        if dest_id not in actor.trail:
+            # Name the remedy, exactly as a locked door names its key. Now
+            # that carrying a torch is no longer the same as burning one,
+            # "you dare not go on" left a player holding the answer and not
+            # being told -- and the whole journey stopped at the cave mouth.
+            spare = next((i for i in actor.inventory
+                          if game.items.get(i).is_light_source), None)
+            if spare:
+                return [f"It's pitch dark {direction} of here -- but you have "
+                        f"{_the(game.items.get(spare).name)}. "
+                        "Try 'light torch' first."]
+            return [f"It's pitch dark {direction} of here and you dare not go "
+                    "on without a light."]
+        messages_back = [Note("You feel your way back along the wall, the way "
+                              "you came.")]
+    else:
+        messages_back = []
 
     if actor.id != "bilbo" and actor.id in loc.npcs:
         loc.npcs.remove(actor.id)
+    # Breadcrumbs: remember where you have been, so the dark can be retraced.
+    actor.trail = ([r for r in actor.trail if r != dest_id] + [loc.id])[-12:]
     actor.location_id = dest_id
     actor.add_travel_fatigue(game.load_burden(actor))
     dest.visited = True
     if actor.id != "bilbo":
         dest.npcs.append(actor.id)
-    return [f"You go {direction}." if actor.id == "bilbo" else f"{actor.name} goes {direction}."]
+    return messages_back + [f"You go {direction}." if actor.id == "bilbo"
+                            else f"{actor.name} goes {direction}."]
 
 
 def do_take(game: "Game", actor: Character, cmd: Command) -> list[str]:
@@ -707,7 +730,13 @@ def do_light(game: "Game", actor: Character, cmd: Command) -> list[str]:
     item = game.items.get(item_id)
     if not item.is_light_source:
         return [f"You can't light {_the(_display_name(item))}."]
-    actor.light_remaining = item.light_turns
+    if actor.light_remaining > 0:
+        return [f"The {_display_name(item)} is already burning."]
+    # No torch burns to a schedule. You know roughly how long a brand lasts;
+    # you never know how long *this* one will, which is what makes pressing
+    # deeper a decision rather than arithmetic.
+    span = item.light_turns
+    actor.light_remaining = game.rng.randint(int(span * 0.55), int(span * 1.2))
     return [f"The {_display_name(item)} flares to life, casting a warm glow."]
 
 

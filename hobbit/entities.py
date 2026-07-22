@@ -30,6 +30,11 @@ class Character:
         self.worn: list[str] = []
         self.wielded: str | None = None
         self.light_remaining: int = 0
+        # The last few rooms walked through. A torch that gutters out deep in
+        # the goblin tunnels would otherwise strand you: every way on is dark,
+        # so you could not move at all and would starve where you stood. You
+        # can always feel your way back along the wall you came by.
+        self.trail: list[str] = []
         self.health = health
         self.max_health = health
         self.base_attack = attack   # unarmed strength
@@ -199,6 +204,7 @@ class Character:
             "id": self.id, "name": self.name, "location_id": self.location_id,
             "inventory": self.inventory, "worn": self.worn, "wielded": self.wielded,
             "light_remaining": self.light_remaining,
+            "trail": self.trail,
             "health": self.health, "max_health": self.max_health,
             "attack_power": self.attack_power,
             "base_attack": self.base_attack,
@@ -215,6 +221,7 @@ class Character:
         self.worn = data.get("worn", [])
         self.wielded = data.get("wielded")
         self.light_remaining = data.get("light_remaining", 0)
+        self.trail = data.get("trail", [])
         self.health = data["health"]
         self.max_health = data["max_health"]
         self.attack_power = data["attack_power"]

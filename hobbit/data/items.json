@@ -30,9 +30,9 @@
       "light",
       "brand"
     ],
-    "description": "An unlit torch. Light it before venturing into the dark.",
+    "description": "A resinous brand. It burns for a while and gutters out; light it again whenever the dark closes in.",
     "type": "light",
-    "light_turns": 40,
+    "light_turns": 12,
     "weight": 2
   },
   "sting": {

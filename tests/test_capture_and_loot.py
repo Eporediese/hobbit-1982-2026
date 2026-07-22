@@ -227,6 +227,8 @@ def test_one_torch_lights_the_room_for_everyone_in_it():
     assert game.seizure_chance(balin) > 0 and game.seizure_chance(dwalin) > 0
 
     dwalin.inventory = ["torch"]           # one torch, held by one dwarf
+    assert not game.room_is_lit("mirkwood_path_2")   # ...but unlit is dark
+    dwalin.light_remaining = 20                      # he strikes it
     assert game.room_is_lit("mirkwood_path_2")
     assert game.seizure_chance(balin) == 0.0   # protects his companion too
     assert game.seizure_chance(dwalin) == 0.0
@@ -255,8 +257,14 @@ def test_the_torch_does_not_save_them_it_lets_them_fight():
     assert cmd is None or cmd.verb != "attack"        # yet he cannot strike
 
     balin.captured = False
-    balin.inventory = ["torch"]                # a light, and now he fights
-    assert game.can_fight_here("spiders_nest")
+    balin.inventory = ["torch"]                # a torch -- but unlit, so dark
+    assert not game.can_fight_here("spiders_nest")
+    cmd = balin.brain.decide(balin, game)
+    assert cmd is not None and cmd.verb == "light"   # so he strikes a light
+    import hobbit.commands as commands
+    commands.execute(game, balin, cmd)
+
+    assert game.can_fight_here("spiders_nest")       # and now he fights
     cmd = balin.brain.decide(balin, game)
     assert cmd is not None and cmd.verb == "attack"
 

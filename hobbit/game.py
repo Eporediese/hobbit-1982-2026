@@ -919,10 +919,47 @@ class Game:
         return master is None or not master.alive
 
     def carries_light(self, character) -> bool:
-        """A lit brand in hand, or a torch in the pack to light."""
-        if getattr(character, "light_remaining", 0) > 0:
-            return True
-        return any(self.items.get(i).is_light_source for i in character.inventory)
+        """A brand actually burning in this character's hand.
+
+        An unlit torch in the pack used to count, which made fuel decorative:
+        the light never ran out because merely owning a torch was light. It has
+        to be lit, and lighting it costs a turn -- so walking into the dark is
+        a thing you do on purpose."""
+        return getattr(character, "light_remaining", 0) > 0
+
+    def burn_torches(self) -> list[str]:
+        """Burn every lit brand down by a turn, and gutter out the ones that
+        reach the end of their span.
+
+        A torch that never goes out is not a light source, it is a permit. But
+        it is not a fuel economy either: the brand survives and can be lit
+        again as often as you like. What it costs you is the turn spent doing
+        it, and the moment of dark before you notice."""
+        messages: list[str] = []
+        # `characters` already contains the player; listing them separately
+        # burned every torch twice as fast as it should.
+        seen: set[int] = set()
+        for char in list(self.characters.values()) + [self.player]:
+            if id(char) in seen or getattr(char, "light_remaining", 0) <= 0:
+                continue
+            seen.add(id(char))
+            char.light_remaining -= 1
+            if char is not self.player and self.player.location_id != char.location_id:
+                continue  # a torch guttering two rooms away is not your problem
+            left = char.light_remaining
+            whose = "Your torch" if char is self.player else f"{char.name}'s torch"
+            if left == 0:
+                # Out, but not spent: the brand can be lit again whenever it
+                # is wanted. The tension is in having to stop and do it -- and
+                # in the turn you spend doing it while something is coming --
+                # not in a fuel gauge running down towards a dead end.
+                messages.append(ui.sentence(
+                    f"{whose} gutters, flares once, and goes out. The dark "
+                    "closes in."))
+            elif left == 3:
+                messages.append(ui.Note(ui.sentence(
+                    f"{whose} burns low and flickers.")))
+        return messages
 
     def room_is_lit(self, loc_id: str) -> bool:
         """Does anyone standing here carry a light? There is only one torch in
@@ -1341,6 +1378,7 @@ class Game:
 
         self._clear_stale_rallies()
 
+        messages.extend(self.burn_torches())
         messages.extend(self._resolve_rescues())
         messages.extend(self._resolve_burials())
         messages.extend(self._deliver_company_news())

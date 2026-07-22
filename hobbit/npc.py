@@ -195,8 +195,11 @@ class MonsterBrain(NPCBrain):
 
 LONELY_MOUNTAIN = "front_gate"  # the party's ultimate destination
 BARREL_STEP = "barrel"          # a way through, but never a step taken alone
-# Items no companion picks up: the puzzles they unlock are the player's.
-PLAYERS_OWN = frozenset({"ring", "thorin_map"})
+# Items no companion picks up off the ground. The puzzles they unlock are the
+# player's -- and the torch belongs here too: only the player's own light lets
+# them walk into a dark room, so a helpful dwarf pocketing the brand at Bag End
+# left Bilbo unable to enter the goblin tunnels at all.
+PLAYERS_OWN = frozenset({"ring", "thorin_map", "torch"})
 GOAL_REPLAN_INTERVAL = 12       # turns a goal holds before it's reconsidered
 PARTY_LEASH = 2                # rooms a companion may stray from Bilbo before heading back
 HUNGER_FORAGE = 42             # hunger at which an NPC with no food goes foraging
@@ -229,10 +232,19 @@ class GoalBrain(SimpleBrain):
         if game.authentic:
             return None   # the 1982 characters noticed nothing; that's the point
 
-        # (No "light the torch" impulse: Game.carries_light already counts an
-        # unlit torch in the pack as light, so a companion carrying one has
-        # nothing to decide and one who isn't has nothing to light. The branch
-        # was written, found unreachable, and removed.)
+        # Strike a light. This was written once, found unreachable and deleted
+        # -- back when merely carrying a torch counted as light, so there was
+        # never anything to decide. Now that a brand has to actually burn, it
+        # is the most useful thing a companion can do: nobody can strike a blow
+        # in the black of Mirkwood, and the torch is no use in a pack. Comes
+        # before the don't-dawdle rule, because standing in the dark is worse
+        # than being a room behind.
+        if (loc.dark and not game.room_is_lit(loc.id)
+                and npc.light_remaining <= 0
+                and any(game.items.get(i).is_light_source for i in npc.inventory)):
+            torch = next(i for i in npc.inventory
+                         if game.items.get(i).is_light_source)
+            return Command(verb="light", obj=game.items.get(torch).name)
 
         # Everything past this point costs a turn, and a companion who stops
         # to pocket a coin while the company marches on is left behind -- one
@@ -270,7 +282,7 @@ class GoalBrain(SimpleBrain):
                 continue
             if item.type == "key" or item_id in PLAYERS_OWN:
                 continue
-            if item.type == "light" or item.value > 0:
+            if item.value > 0:
                 return Command(verb="take", obj=item.name)
 
         # A companion who has run out of food, when you have some to spare.
