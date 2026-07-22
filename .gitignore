@@ -6,3 +6,17 @@ venv/
 
 # A player's in-progress journey, not source.
 savegame.json
+saves/
+
+# Credentials. This repository is public: a key committed here is a key
+# published, and rotating it afterwards is the only remedy. These patterns are
+# deliberately wide -- it costs nothing to ignore a file that was never
+# secret, and everything to track one that was.
+.env
+.env.*
+.secrets/
+secrets/
+*.key
+*.pem
+*secret*.json
+*credentials*.json
