@@ -66,11 +66,12 @@ class SessionStore:
     leaves no room for a subtle interleaving bug.
     """
 
-    def __init__(self, directory: Path, llm=None, authentic: bool = False,
-                 max_transcript: int = 400):
+    def __init__(self, directory: Path, llm=None, llm_fast=None,
+                 authentic: bool = False, max_transcript: int = 400):
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.llm = llm
+        self.llm_fast = llm_fast
         self.authentic = authentic
         self.max_transcript = max_transcript
         self._sessions: dict[str, Session] = {}
@@ -82,7 +83,8 @@ class SessionStore:
         return self.directory / f"{name}.json"
 
     def _new_game(self) -> Game:
-        return Game(authentic=self.authentic, llm=self.llm)
+        return Game(authentic=self.authentic, llm=self.llm,
+                    llm_fast=self.llm_fast)
 
     def _load_from_disk(self, name: str) -> Game | None:
         path = self.path_for(name)

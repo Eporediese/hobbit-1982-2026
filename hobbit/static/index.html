@@ -1,0 +1,139 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Hobbit</title>
+<style>
+  :root { --bg:#14110e; --fg:#e8dcc8; --dim:#8a7f6d; --added:#7fd6d0; --echo:#c9a227; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 ui-monospace,
+         "Cascadia Mono",Menlo,Consolas,monospace; height:100dvh; display:flex;
+         flex-direction:column }
+  header { padding:.6rem 1rem; border-bottom:1px solid #2b2620; color:var(--dim);
+           display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap }
+  header b { color:var(--fg); font-weight:600 }
+  #scroll { flex:1; overflow-y:auto; padding:1rem; white-space:pre-wrap;
+            overflow-wrap:anywhere }
+  #scroll div { min-height:1.55em }
+  .added { color:var(--added) }
+  .echo  { color:var(--echo) }
+  form { display:flex; gap:.5rem; padding:.75rem 1rem; border-top:1px solid #2b2620 }
+  input { flex:1; background:#1d1a15; color:var(--fg); border:1px solid #35302a;
+          border-radius:6px; padding:.6rem .75rem; font:inherit }
+  input:focus { outline:2px solid var(--added); outline-offset:-1px }
+  button { background:#35302a; color:var(--fg); border:0; border-radius:6px;
+           padding:.6rem 1rem; font:inherit; cursor:pointer }
+  .panel { margin:auto; padding:2rem; max-width:28rem; text-align:center }
+  .panel h1 { font-weight:600; letter-spacing:.03em }
+  .panel form { border:0; padding:0; margin-top:1rem }
+  .err { color:#c98; min-height:1.4em }
+</style>
+
+<!-- The shared word, if the server asks for one -->
+<div class="panel" id="gate" hidden>
+  <h1>The Hobbit</h1>
+  <p>Speak, friend, and enter.</p>
+  <form id="gateform">
+    <input id="password" type="password" placeholder="the word"
+           autocomplete="current-password">
+    <button>Enter</button>
+  </form>
+  <p class="err" id="gateerr"></p>
+</div>
+
+<!-- Who is playing -->
+<div class="panel" id="namepanel" hidden>
+  <h1>The Hobbit</h1>
+  <p>By what name shall the company know you?</p>
+  <form id="nameform">
+    <input id="nameinput" placeholder="your name" autocomplete="off"
+           maxlength="32">
+    <button>Begin</button>
+  </form>
+  <p class="err" id="nameerr"></p>
+</div>
+
+<!-- The game -->
+<header hidden id="bar"><b>The Hobbit</b><span id="who"></span></header>
+<div id="scroll" hidden></div>
+<form id="turn" hidden>
+  <input id="cmd" placeholder="What do you do?" autocomplete="off">
+  <button>Go</button>
+</form>
+
+<script>
+const $ = s => document.querySelector(s);
+let name = localStorage.getItem("hobbit-name") || "";
+
+function only(id) {
+  for (const el of ["gate", "namepanel", "bar", "scroll", "turn"])
+    $("#" + el).hidden = true;
+  if (id === "game") { $("#bar").hidden = $("#scroll").hidden = $("#turn").hidden = false; }
+  else $("#" + id).hidden = false;
+}
+
+function show(lines) {
+  const box = $("#scroll");
+  for (const html of (lines || [])) {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    box.appendChild(div);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+// One place all requests go through, so a 401 always lands on the gate.
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (r.status === 401) { only("gate"); $("#password").focus(); throw new Error("locked"); }
+  return r.json();
+}
+const send = (path, payload) => api(path, {
+  method: "POST", headers: {"Content-Type": "application/json"},
+  body: JSON.stringify(payload)
+});
+
+$("#gateform").onsubmit = async e => {
+  e.preventDefault();
+  const r = await fetch("/api/login", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({password: $("#password").value})
+  });
+  if (r.ok) begin();
+  else $("#gateerr").textContent = "That is not the word.";
+};
+
+$("#nameform").onsubmit = e => {
+  e.preventDefault();
+  const chosen = $("#nameinput").value.trim();
+  if (!chosen) { $("#nameerr").textContent = "A name, please."; return; }
+  name = chosen;
+  localStorage.setItem("hobbit-name", name);
+  play();
+};
+
+$("#turn").onsubmit = async e => {
+  e.preventDefault();
+  const text = $("#cmd").value.trim();
+  if (!text) return;
+  $("#cmd").value = "";
+  const data = await send("/api/command", {name, text});
+  show(data.lines);
+};
+
+function begin() {
+  if (!name) { only("namepanel"); $("#nameinput").focus(); return; }
+  play();
+}
+
+async function play() {
+  only("game");
+  $("#who").textContent = name;
+  const state = await api("/api/state?name=" + encodeURIComponent(name));
+  $("#scroll").innerHTML = "";
+  if (state.lines && state.lines.length) show(state.lines);
+  else show((await send("/api/command", {name, text: "look"})).lines);
+  $("#cmd").focus();
+}
+
+begin().catch(() => {});
+</script>
