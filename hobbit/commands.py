@@ -246,6 +246,13 @@ def do_give(game: "Game", actor: Character, cmd: Command) -> list[str]:
         candidates.append("bilbo")
     target_id = _find_character(game, cmd.indirect, candidates)
     if not target_id:
+        # A companion can be commanded from anywhere (that is how you recall a
+        # scout who has ranged ahead), but they can only hand something to
+        # whoever shares their room. When the player tells such a companion to
+        # give them something, "there is no bilbo here" blames the wrong
+        # person -- the player IS Bilbo. Name the one who is actually away.
+        if actor.id != "bilbo" and _find_character(game, cmd.indirect, ["bilbo"]):
+            return [f"{actor.name} isn't here beside you to hand it over."]
         return [f"There is no {cmd.indirect} here."]
     target = game.characters[target_id]
     item = game.items.get(item_id)

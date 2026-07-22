@@ -107,3 +107,47 @@ def test_status_shows_what_is_in_hand():
     game.process_player_input("wield sting")
     msgs = game.process_player_input("status")
     assert any("wielding Sting" in m for m in msgs)
+
+
+def test_giving_to_the_player_names_the_absent_companion_not_bilbo():
+    """A scout ranged a room ahead can still be commanded, but he can't hand
+    anything to Bilbo from there. The old message -- 'there is no bilbo here'
+    -- blamed the player, who is Bilbo."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    gandalf = game.characters["gandalf"]
+    game.world.get("bag_end").npcs.remove("gandalf")
+    gandalf.location_id = "hobbiton_road"
+    game.world.get("hobbiton_road").npcs.append("gandalf")
+    gandalf.inventory = ["walking_stick"]
+
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("gandalf, give stick to bilbo"))
+    assert "Gandalf isn't here" in msgs
+    assert "no bilbo" not in msgs.lower()
+    assert "walking_stick" in gandalf.inventory   # he still holds it
+
+
+def test_giving_to_the_player_works_when_together():
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.characters["gandalf"].inventory = ["walking_stick"]
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("gandalf, give stick to bilbo"))
+    assert "gives the walking stick to Bilbo" in msgs
+    assert "walking_stick" in game.player.inventory
+
+
+def test_a_genuinely_absent_recipient_still_reads_plainly():
+    """The reworded message is only for the player-as-target case; asking to
+    give to someone who really isn't in the room keeps the plain wording."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.player.inventory = ["walking_stick"]
+    # thorin is here at the start; move him away
+    game.world.get("bag_end").npcs.remove("thorin")
+    game.characters["thorin"].location_id = "hobbiton_road"
+    game.world.get("hobbiton_road").npcs.append("thorin")
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("give stick to thorin"))
+    assert "no thorin here" in msgs.lower()
