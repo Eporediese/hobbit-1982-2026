@@ -426,3 +426,96 @@ def test_barred_ways_are_excluded_from_every_traversal():
             assert direction not in headings, f"{loc.id} offers barred {direction}"
             headings_r = [d for d, _ in world.ways_out(loc.id, barrel=True)]
             assert direction not in headings_r
+
+
+def _capture(game, who, where="spiders_nest"):
+    c = game.characters[who]
+    old = game.world.get(c.location_id)
+    if who in old.npcs:
+        old.npcs.remove(who)
+    c.captured = True
+    c.location_id = where
+    game.world.get(where).npcs.append(who)
+
+
+def test_a_captive_does_not_strand_the_company_for_ever():
+    """Found by soak-testing: Mirkwood's spiders take prisoners in the room
+    before the Elvenking's halls, and a captive counted as 'not here' made the
+    barrels refuse to leave -- with advice ('call them with follow me') that
+    cannot be obeyed by a webbed dwarf. The game became unwinnable."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.world.get("elvenking_cellars").locked = False
+    _gather(game, "elvenking_cellars")
+    _capture(game, "dwalin")
+
+    assert not game.company_adrift()              # he is taken, not lagging
+    assert [c.id for c in game.company_captive()] == ["dwalin"]
+
+    first = " ".join(str(getattr(m, "text", m))
+                     for m in game.process_player_input("barrel"))
+    assert "held captive" in first
+    assert "cut them free" in first
+    assert game.player.location_id == "elvenking_cellars"   # refused, once
+
+    second = " ".join(str(getattr(m, "text", m))
+                      for m in game.process_player_input("barrel"))
+    assert game.player.location_id != "elvenking_cellars"   # a knowing choice
+    assert "barrel" in second.lower() or "river" in second.lower()
+
+
+def test_someone_merely_lagging_still_stops_the_barrels():
+    """The original guard has to keep working: a companion who could walk to
+    you must not be left behind by accident."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.world.get("elvenking_cellars").locked = False
+    _gather(game, "elvenking_cellars")
+    stray = game.characters["dwalin"]
+    game.world.get("elvenking_cellars").npcs.remove("dwalin")
+    stray.location_id = "elvenking_dungeon"
+    game.world.get("elvenking_dungeon").npcs.append("dwalin")
+
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("barrel"))
+    assert "not here" in msgs and "Dwalin" in msgs
+    assert game.player.location_id == "elvenking_cellars"
+    # And no second-chance escape hatch: a lagger is not a captive, so the
+    # warn-once rule must not apply to him. (He may well have walked down by
+    # now -- the muster works -- so check the rule, not the next turn.)
+    game.world.get("elvenking_cellars").npcs.remove("dwalin")
+    stray.location_id = "elvenking_dungeon"
+    game.world.get("elvenking_dungeon").npcs.append("dwalin")         if "dwalin" not in game.world.get("elvenking_dungeon").npcs else None
+    assert [c.id for c in game.company_adrift()] == ["dwalin"]
+
+
+def test_the_scout_stays_put_once_he_reaches_the_barrels():
+    """Found by soak-testing. The muster moved a companion toward the barrels
+    but did nothing once they arrived, so the scout fell through to his own
+    goal and ranged straight back out -- Gandalf bounced between the cellars
+    and the dungeon every single turn, and the company was never all present
+    on the turn the player said 'barrel'. The barrels could never leave."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.world.get("elvenking_cellars").locked = False
+    _gather(game, "elvenking_cellars")
+    gandalf = game.characters["gandalf"]
+    assert gandalf.def_.is_scout                      # the premise
+    assert gandalf.location_id == "elvenking_cellars"
+
+    for _ in range(8):
+        game.process_player_input("wait")
+        assert gandalf.location_id == "elvenking_cellars", "the scout wandered off"
+
+
+def test_the_barrels_can_actually_leave_with_a_scout_in_the_company():
+    """The end-to-end consequence of the above: with Gandalf alive, the
+    Elvenking's halls were a dead end."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.world.get("elvenking_cellars").locked = False
+    _gather(game, "elvenking_cellars")
+    game.process_player_input("wait")
+    msgs = " ".join(str(getattr(m, "text", m))
+                    for m in game.process_player_input("barrel"))
+    assert game.player.location_id != "elvenking_cellars", msgs

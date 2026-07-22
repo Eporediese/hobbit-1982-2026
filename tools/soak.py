@@ -34,52 +34,111 @@ DIRECTIONS = ["north", "south", "east", "west", "up", "down"]
 
 # -- what a plausible player does ------------------------------------------
 
+# Things a competent player picks up when they see them, and what they are
+# for. The bot detours for these the way a player does once Gandalf has
+# mentioned them -- without them the back half of the game is unreachable.
+ERRANDS = [
+    ("moon_key", "rivendell_library"),        # opens the Secret Door, a world away
+    ("ring", "gollum_lake_shore"),            # gets you past the wood-elf guard
+    ("elven_cellar_key", "elvenking_halls"),  # in the hall the guard keeps
+]
+FINALE = "treasure_chamber"
+KEEP = ("key", "light", "weapon")        # item types always worth carrying
+
+
 def choose_command(game: Game, rng: random.Random) -> str:
-    """A player who is trying, roughly, to get somewhere and stay alive."""
+    """A player who is trying to finish the game and stay alive."""
     player = game.player
     loc = game.world.get(player.location_id)
 
+    # Stay alive first.
     if player.is_fainted() or player.hunger > 50:
         if game.carried_food(player):
             return "eat"
-        if loc.food_source:
+        if loc.food_source and game.free_capacity(player) > 0:
             return "stock up"
     if player.fatigue > 55:
         return "rest"
+    if loc.dark and player.light_remaining <= 0 and "torch" in player.inventory:
+        return "light torch"
 
-    # A guard turns back anyone he can see. A real player works out that the
-    # ring gets them past -- so the bot does too, or every path stops here.
-    if "ring" in player.inventory and "ring" not in player.worn:
-        for direction, dest in loc.exits.items():
-            if game.guard_at(dest) is not None:
-                return "wear ring"
+    # Draw the best blade you have before swinging at anything.
+    best = None
+    for item_id in player.inventory:
+        item = game.items.get(item_id)
+        if item.is_weapon and (best is None or item.damage > best[1]):
+            best = (item_id, item.damage)
+    if best and player.wielded != best[0]:
+        return f"wield {game.items.get(best[0]).name}"
 
     monsters = [c for c in game.characters.values()
                 if c.alive and c.location_id == loc.id
                 and getattr(c, "def_", None) and c.def_.is_monster
                 and not getattr(c, "captured", False)]
-    if monsters and rng.random() < 0.8:
+    if monsters and game.can_fight_here(loc.id):
         return f"attack {monsters[0].name}"
 
-    if loc.food_source and len(game.carried_food(player)) < 4:
+    # Only if there is room -- otherwise a pack full of gear means "stock up"
+    # can never reach its target and the bot stands at the inn for ever.
+    if (loc.food_source and len(game.carried_food(player)) < 6
+            and game.free_capacity(player) > 0):
         return "stock up"
 
-    takeable = [i for i in loc.items if game.items.get(i).takeable]
-    if takeable and rng.random() < 0.5:
-        return f"take {game.items.get(takeable[0]).name}"
+    # Pick up what is worth having: keys, lights, treasure, the ring -- and a
+    # blade only if it beats the one in hand. Hoarding every sword filled the
+    # pack, left no room for food, and starved Bilbo on the last leg.
+    held = game.items.get(player.wielded).damage if player.wielded else 0
+    for item_id in list(loc.items):
+        item = game.items.get(item_id)
+        if not item.takeable:
+            continue
+        if item.is_weapon and item.damage <= held:
+            continue
+        if item.type in KEEP or item.value > 0:
+            return f"take {item.name}"
 
-    if loc.locked is False and rng.random() < 0.08:
-        return rng.choice(["look", "party", "status", "inventory"])
+    # A guard turns back anyone he can see; the ring is the answer.
+    if "ring" in player.inventory and "ring" not in player.worn:
+        if any(game.guard_at(dest) is not None for dest in loc.exits.values()):
+            return "wear ring"
 
-    # Head for the Mountain most of the time, wander sometimes -- a player
-    # explores, but does not wander forever.
-    if rng.random() < 0.75:
-        step = game.world.path_step(loc.id, "front_gate")
-        if step:
+    # A locked door you hold the key to is a door you open.
+    for direction, dest in loc.exits.items():
+        room = game.world.get(dest)
+        if room.locked and room.key_item and room.key_item in player.inventory:
+            return "open door"
+
+    # The barrels leave when the company is aboard, and not before.
+    if loc.barrel_route:
+        here = sum(1 for c in game.characters.values()
+                   if getattr(c, "def_", None) and c.def_.is_party
+                   and c.alive and not c.captured and c.location_id == loc.id)
+        alive = sum(1 for c in game.characters.values()
+                    if getattr(c, "def_", None) and c.def_.is_party and c.alive
+                    and not c.captured)
+        if here >= alive or rng.random() < 0.15:   # or give up waiting
+            return "barrel"
+        return "wait"
+
+    # Errands first, then the Mountain.
+    target = FINALE
+    for item_id, where in ERRANDS:
+        if item_id not in player.inventory and where in game.world.locations:
+            target = where
+            break
+    # Don't outrun the company: a player notices when the dwarves fall behind.
+    behind = [c for c in game.characters.values()
+              if getattr(c, "def_", None) and c.def_.is_party and c.alive
+              and not c.captured
+              and game.world.distance(c.location_id, loc.id) > 2]
+    if len(behind) > 6 and rng.random() < 0.7:
+        return "wait"
+
+    if rng.random() < 0.9:
+        step = game.world.path_step(loc.id, target)
+        if step and step != "barrel":
             return step
     exits = list(loc.exits)
-    if loc.barrel_route:
-        exits.append("barrel")
     return rng.choice(exits) if exits else "look"
 
 

@@ -216,7 +216,18 @@ class GoalBrain(SimpleBrain):
         # scout, who would otherwise keep ranging and be left behind a barred
         # gate when the company casts off.
         muster = game.mustering_room()
-        if muster and npc.location_id != muster:
+        if muster:
+            if npc.location_id == muster:
+                # Arrived -- and staying. Falling through from here sent the
+                # scout straight back out to range ahead, so Gandalf bounced
+                # between the cellars and the dungeon every single turn and the
+                # barrels could never cast off: the company was never all
+                # present on the turn the player tried. An ordinary companion
+                # happens to stay put, because escorting Bilbo means standing
+                # where he already is. The scout had somewhere else to be.
+                npc.goal_target, npc.goal_desc, npc.goal_kind = (
+                    muster, "waiting at the barrels", "escort")
+                return None
             step = game.world.path_step(npc.location_id, muster)
             if step:
                 npc.goal_target, npc.goal_desc, npc.goal_kind = (

@@ -731,6 +731,20 @@ def do_barrel(game: "Game", actor: Character, cmd: Command) -> list[str]:
                 f"and the gate shuts behind the barrels. ({where}.)",
                 Note("Gather the whole company here first -- lead them down, or "
                      "call them with '<name>, follow me'.")]
+    # A captive cannot walk to the barrels, so waiting is not the answer --
+    # but casting off strands them behind a barred gate for good. Say so once
+    # and refuse; a second `barrel` is the player deciding to leave them.
+    captives = game.company_captive()
+    if captives and not getattr(game, "_barrel_warned", False):
+        game._barrel_warned = True
+        who = ui.join_names([c.name for c in captives])
+        where = ui.join_names(sorted({game.world.get(c.location_id).name
+                                      for c in captives}))
+        return [f"You could climb into a barrel -- but {who} "
+                f"{'is' if len(captives) == 1 else 'are'} still held captive, "
+                f"and the gate shuts behind the barrels. ({where}.)",
+                Note("Go back and cut them free, or say 'barrel' again to cast "
+                     "off and leave them behind.")]
     dest_id = loc.barrel_route
     dest = game.world.get(dest_id)
     riders = [game.characters[cid] for cid in list(loc.npcs)

@@ -881,13 +881,27 @@ class Game:
         return None
 
     def company_adrift(self) -> list:
-        """Living companions not standing with Bilbo. Checked before the
-        barrels cast off, so nobody is left on the wrong side of a barred gate
-        with no way to follow."""
+        """Companions who could walk to Bilbo but haven't -- checked before the
+        barrels cast off, so nobody able to follow is left on the wrong side of
+        a barred gate.
+
+        Captives are deliberately excluded. A webbed dwarf is not lagging
+        behind; he is held, and no amount of waiting will bring him. Counting
+        him here made the barrels refuse to leave for ever: since Mirkwood's
+        spiders take prisoners in the room before the Elvenking's halls, one
+        capture soft-locked the game with advice -- "call them with 'follow
+        me'" -- that cannot be obeyed. See company_captive."""
         here = self.player.location_id
         return [c for c in self.characters.values()
                 if isinstance(c, NPC) and c.def_.is_party and c.alive
-                and c.location_id != here]
+                and not c.captured and c.location_id != here]
+
+    def company_captive(self) -> list:
+        """Living companions held somewhere -- who cannot come to the barrels
+        under their own power, and must be freed or left."""
+        return [c for c in self.characters.values()
+                if isinstance(c, NPC) and c.def_.is_party and c.alive
+                and c.captured]
 
     # -- goblin abductions ------------------------------------------------
     def goblins_routed(self) -> bool:
