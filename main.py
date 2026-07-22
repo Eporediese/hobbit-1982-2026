@@ -8,7 +8,8 @@ from pathlib import Path
 
 from hobbit import ui
 from hobbit.game import Game
-from hobbit.llm import LLMClient, LLMConfig
+from hobbit.llm import (LLMClient, LLMConfig, config_from_env,
+                        fast_config_from_env)
 
 # Anchored beside the game itself, so saving and loading work no matter
 # which directory the game was launched from.
@@ -37,20 +38,41 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _make_llm(args: argparse.Namespace):
-    """Return an LLMClient if --ai is set and a server is reachable, else
-    None (companions fall back to the simple routines)."""
+    """Return (client, fast_client) if --ai is set and a model answers, else
+    (None, None) -- companions fall back to the simple routines.
+
+    A configured environment wins over the Ollama flags, so the same settings
+    the server will use can be played against here first.
+    """
     if not args.ai:
-        return None
+        return None, None
+    env_cfg = config_from_env()
+    if env_cfg is not None:
+        client = LLMClient(env_cfg)
+        print(f"Waking the companions ({env_cfg.model})...", end=" ", flush=True)
+        if not client.warmup():
+            print("no reply; using the simple routines.\n")
+            return None, None
+        print("ready.")
+        fast_cfg = fast_config_from_env()
+        fast = None
+        if fast_cfg is not None:
+            fast = LLMClient(fast_cfg)
+            print(ui.note_line(
+                f"(goal decisions go to {fast_cfg.model}; dialogue to "
+                f"{env_cfg.model}.)"))
+        print()
+        return client, fast
     client = LLMClient(LLMConfig(base_url=args.ollama_url, model=args.model))
     if not client.health():
         print(ui.note_line(f"(--ai: no model at {args.ollama_url}; companions use the simple routines.)"))
-        return None
+        return None, None
     print(f"Waking the companions ({args.model})...", end=" ", flush=True)
     if client.warmup():
         print("ready.\n")
-        return client
+        return client, None
     print("no reply; using the simple routines.\n")
-    return None
+    return None, None
 
 
 def main() -> None:
@@ -58,8 +80,8 @@ def main() -> None:
     args = _parse_args()
     authentic = args.authentic
     print(BANNER)
-    llm = _make_llm(args)
-    game = Game(authentic=authentic, llm=llm)
+    llm, llm_fast = _make_llm(args)
+    game = Game(authentic=authentic, llm=llm, llm_fast=llm_fast)
 
     if authentic:
         print("** PURIST MODE -- the raw 1982-flavored experience **")

@@ -78,6 +78,12 @@ def _read_key(env: dict[str, str]) -> str | None:
     stored secrets to the process as environment variables, so refusing to
     read one would mean refusing to run there.
 
+    The file may hold the bare token (the Docker/Kubernetes convention) or a
+    JSON object with the token in a field, which is what a hand-rolled secrets
+    file usually looks like. Both are accepted so one file can serve several
+    projects, rather than the same key being copied into a second place --
+    copies are what get committed by accident.
+
     The strip() matters: a key file written by an editor ends with a newline,
     and a trailing newline in an Authorization header is a 401 that looks
     exactly like a wrong key.
@@ -85,13 +91,52 @@ def _read_key(env: dict[str, str]) -> str | None:
     path = env.get("HOBBIT_LLM_KEY_FILE")
     if path:
         try:
-            return Path(path).read_text(encoding="utf-8").strip() or None
+            raw = Path(path).read_text(encoding="utf-8").strip()
         except OSError:
             # Fall through to the variable rather than dying at startup: a
             # missing secret mount should degrade to scripted companions, not
             # take the whole server down.
-            pass
+            raw = ""
+        if raw:
+            found = _key_from_text(raw, env.get("HOBBIT_LLM_KEY_FIELD"))
+            if found:
+                return found
     return (env.get("HOBBIT_LLM_KEY") or "").strip() or None
+
+
+# Field names a hand-written secrets file tends to use, most specific first.
+_KEY_FIELDS = ("api_key", "apiKey", "ppq_api_key", "PPQ_API_KEY",
+               "key", "token", "secret", "api_token")
+
+
+def _key_from_text(raw: str, field_name: str | None = None) -> str | None:
+    """Pull the token out of a key file's contents.
+
+    Bare text is the token. JSON gets the field named by HOBBIT_LLM_KEY_FIELD
+    if set, else the first recognised field name, else -- only if the object
+    holds exactly one plausible secret -- that one. The guessing is bounded on
+    purpose: sending a whole JSON blob as a bearer token produces a 401 that
+    looks exactly like a wrong key, and that is an afternoon gone.
+    """
+    if not raw.startswith(("{", "[")):
+        return raw
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw  # not JSON after all -- take it at face value
+    if not isinstance(data, dict):
+        return None
+    if field_name:
+        value = data.get(field_name)
+        return str(value).strip() if isinstance(value, str) else None
+    for name in _KEY_FIELDS:
+        value = data.get(name)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    candidates = [v.strip() for v in data.values()
+                  if isinstance(v, str) and len(v.strip()) >= 20
+                  and " " not in v.strip()]
+    return candidates[0] if len(candidates) == 1 else None
 
 
 def config_from_env(env: dict[str, str] | None = None) -> LLMConfig | None:
@@ -106,6 +151,8 @@ def config_from_env(env: dict[str, str] | None = None) -> LLMConfig | None:
       HOBBIT_LLM_KEY_FILE  a file to read the token from instead (preferred
                            in containers -- see _read_key below)
       HOBBIT_LLM_STYLE     'anthropic', 'openai' or 'ollama' (inferred if unset)
+      HOBBIT_LLM_FAST_MODEL  a cheaper model for keyword-only calls; see
+                             fast_config_from_env
     """
     env = os.environ if env is None else env
     url = env.get("HOBBIT_LLM_URL")
@@ -270,3 +317,32 @@ class LLMClient:
             return None
         text = (data.get("message", {}).get("content") or "").strip()
         return text or None
+
+
+def fast_config_from_env(env: dict[str, str] | None = None) -> LLMConfig | None:
+    """A second, cheaper client for calls whose answer is a single keyword.
+
+    Measured over a 120-turn run, 74% of model calls are goal picks that
+    return one word like "ADVANCE" -- the model's eloquence buys nothing
+    there, while the dialogue a player actually reads is a small minority of
+    calls. Pointing the mechanical majority at a cheaper, faster model keeps
+    the good one for the lines that matter.
+
+    Returns None when HOBBIT_LLM_FAST_MODEL is unset, which leaves the
+    single-model setup exactly as it was.
+    """
+    env = os.environ if env is None else env
+    fast_model = env.get("HOBBIT_LLM_FAST_MODEL")
+    if not fast_model:
+        return None
+    cfg = config_from_env(env)
+    if cfg is None:
+        return None
+    cfg.model = fast_model
+    # The temperature rule follows the model that is actually being called,
+    # not the one it was cloned from.
+    cfg.temperature = None if "claude" in fast_model.lower() else cfg.temperature
+    if "HOBBIT_LLM_TEMPERATURE" in env:
+        raw = env["HOBBIT_LLM_TEMPERATURE"].strip().lower()
+        cfg.temperature = None if raw in ("", "none", "off") else float(raw)
+    return cfg

@@ -20,7 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from hobbit.llm import LLMClient, config_from_env  # noqa: E402
+from hobbit.llm import (LLMClient, config_from_env,  # noqa: E402
+                        fast_config_from_env)
 
 PERSONA = ("You are Bofur, a dwarf of Thorin's company: talkative, fond of a "
            "song and a joke, and the kindest to Bilbo of any of them. Reply "
@@ -74,6 +75,16 @@ def main() -> int:
         print("     is a Claude one, try HOBBIT_LLM_TEMPERATURE=none")
         return 1
     print("ok")
+
+    fast = fast_config_from_env()
+    if fast is not None:
+        print(f"  fast     : {fast.model}  (goal picks only)")
+        probe = LLMClient(fast).chat(
+            "Reply with EXACTLY ONE keyword and nothing else: ADVANCE, REST.",
+            "You are marching for the Mountain. One keyword only.")
+        print(f"           -> {probe!r}"
+              if probe else "           -> FAILED (check the fast model name)")
+        print()
 
     print("2/2  in character ...", end=" ", flush=True)
     line = client.chat(PERSONA, "Bilbo asks whether the road ahead is safe. "

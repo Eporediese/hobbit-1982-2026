@@ -113,7 +113,7 @@ def _collapse_company_messages(messages: list[str]) -> list[str]:
 
 class Game:
     def __init__(self, seed: int | None = None, authentic: bool = False,
-                 llm=None):
+                 llm=None, llm_fast=None):
         # There are two games, settled at the start and held for the journey:
         #   'purist'   -- the raw 1982-flavoured experience (a.k.a. authentic):
         #                 reverted descriptions, added items are back to being
@@ -127,6 +127,12 @@ class Game:
         # (AI dialogue + narration over the same rule-based actions). Absent
         # or unreachable, everything falls back to the simple routines.
         self.llm = llm
+        # An optional cheaper, faster client for the calls whose answer is one
+        # keyword. Roughly three quarters of a run's model calls are goal
+        # picks ("ADVANCE"), where eloquence buys nothing -- so the good model
+        # is kept for the lines a player actually reads. Falls back to `llm`
+        # when unset, which is the single-model setup unchanged.
+        self.llm_fast = llm_fast
         self.ai = llm is not None
         # Short rolling log of notable events, fed into NPC prompts so their
         # dialogue/narration reflects what just happened.

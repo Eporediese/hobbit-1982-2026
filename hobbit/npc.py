@@ -407,7 +407,12 @@ class LLMGoalBrain(GoalBrain):
                   "else: " + ", ".join(_GOAL_INTENTS) + ".")
         user = (f"You are {_persona(npc)}. {_scene(npc, game)} "
                 "What is your immediate goal right now? One keyword only.")
-        reply = _safe_chat(getattr(game, "llm", None), system, user)
+        # A goal is one keyword -- "ADVANCE" -- so the model's eloquence is
+        # irrelevant here, and three quarters of all model calls in a run are
+        # this. Use the cheap fast client when one is configured and keep the
+        # good model for the lines a player actually reads.
+        client = getattr(game, "llm_fast", None) or getattr(game, "llm", None)
+        reply = _safe_chat(client, system, user)
         if not reply:
             return None
         upper = reply.upper()
@@ -506,6 +511,10 @@ def _safe_chat(client, system: str, user: str) -> str | None:
 # ("We have much to do, Mr. Baggins" is one sentence, not two).
 _ABBREV_RE = re.compile(r"\b(Mr|Mrs|Ms|Dr|St)\.")
 _ABBREV_MARK = "\x00"
+# How much a companion may say in one breath, in characters. Roughly two
+# full lines of prose: long enough that punchy dialogue survives whole,
+# short enough that nobody delivers a monologue mid-fight.
+REPLY_BUDGET = 220
 
 
 def _clean(text: str | None) -> str | None:
@@ -528,14 +537,30 @@ def _clean(text: str | None) -> str | None:
         if len(head.split()) <= 3 and rest.strip():
             text = rest.strip()
     text = _scrub_lore(text)
-    # Strip any stage-direction / narration the model slipped in (asterisks).
+    # Asterisks mean two different things, and deleting both broke sentences.
+    # A multi-word span is stage direction ("*chuckles and claps Bilbo on the
+    # back*") and goes. A single word is emphasis on a stressed word
+    # ("nothing's ever *safe*, laddie") -- deleting that left "nothing's ever
+    # , laddie", so unwrap it and keep the word.
+    text = re.sub(r"\*([^*\s]+)\*", r"\1", text)
     text = re.sub(r"\*[^*]*\*", "", text).strip()
-    # Keep it short: at most the first two sentences, trimmed at real
-    # sentence ends (honorific periods protected so "Mr. Baggins" survives).
+    # Keep it short -- but by length, not by counting sentences. A flat cap of
+    # two sentences was tuned against a small local model that rambled in long
+    # ones. A stronger model writes dialogue the way people speak it, in short
+    # bursts, and the cap then amputated the reply: "Safe? Ha! But don't you
+    # fret, you've fourteen dwarves to watch your back" came out as "Safe? Ha!"
+    # Take whole sentences up to a budget instead, so two long ones are still
+    # trimmed and five short ones survive intact.
     protected = _ABBREV_RE.sub(lambda m: m.group(1) + _ABBREV_MARK, text)
     sentences = re.findall(r"[^.!?]*[.!?]", protected)
     if sentences:
-        protected = "".join(sentences[:2]).strip()
+        kept: list[str] = []
+        for sentence in sentences:
+            # Always keep the first, or the reply could vanish entirely.
+            if kept and sum(len(s) for s in kept) + len(sentence) > REPLY_BUDGET:
+                break
+            kept.append(sentence)
+        protected = "".join(kept).strip()
     elif protected and protected[-1] not in ".!?":
         # No complete sentence at all (cut mid-thought): trail off cleanly.
         if len(protected) > 200:

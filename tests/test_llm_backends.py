@@ -238,3 +238,120 @@ def test_the_variable_still_works_because_platforms_only_offer_that():
                            "HOBBIT_LLM_MODEL": "glm-5.2",
                            "HOBBIT_LLM_KEY": "  sk-padded  "})
     assert cfg.api_key == "sk-padded"
+
+
+def _key_env(tmp_path, contents, **extra):
+    f = tmp_path / "secrets.json"
+    f.write_text(contents, encoding="utf-8")
+    return {"HOBBIT_LLM_URL": "https://api.ppq.ai",
+            "HOBBIT_LLM_MODEL": "claude-sonnet-5",
+            "HOBBIT_LLM_KEY_FILE": str(f), **extra}
+
+
+def test_a_json_secrets_file_yields_the_key_not_the_whole_blob(tmp_path):
+    """A hand-rolled secrets file is JSON. Sending the blob as a bearer token
+    gives a 401 that looks exactly like a wrong key."""
+    for field in ("api_key", "apiKey", "key", "token", "PPQ_API_KEY"):
+        env = _key_env(tmp_path, json.dumps({field: "sk-the-real-key"}))
+        assert config_from_env(env).api_key == "sk-the-real-key", field
+
+
+def test_the_field_can_be_named_when_the_guess_would_be_wrong(tmp_path):
+    env = _key_env(tmp_path,
+                   json.dumps({"api_key": "sk-openai-one",
+                               "ppq": "sk-the-ppq-one"}),
+                   HOBBIT_LLM_KEY_FIELD="ppq")
+    assert config_from_env(env).api_key == "sk-the-ppq-one"
+
+
+def test_a_lone_plausible_secret_is_found_under_any_field_name(tmp_path):
+    env = _key_env(tmp_path, json.dumps({"wildly_unexpected_name":
+                                         "sk-abcdefghijklmnopqrstuvwxyz"}))
+    assert config_from_env(env).api_key == "sk-abcdefghijklmnopqrstuvwxyz"
+
+
+def test_an_ambiguous_json_file_refuses_to_guess(tmp_path):
+    """Two candidates and no named field: better to fall back than to send
+    the wrong project's key to a provider."""
+    env = _key_env(tmp_path, json.dumps({"one": "sk-aaaaaaaaaaaaaaaaaaaaaa",
+                                         "two": "sk-bbbbbbbbbbbbbbbbbbbbbb"}),
+                   HOBBIT_LLM_KEY="sk-from-env")
+    assert config_from_env(env).api_key == "sk-from-env"
+
+
+def test_a_bare_token_file_still_works(tmp_path):
+    f = tmp_path / "llm.key"
+    f.write_text("sk-bare-token\n", encoding="utf-8")
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "glm-5.2",
+                           "HOBBIT_LLM_KEY_FILE": str(f)})
+    assert cfg.api_key == "sk-bare-token"
+
+
+def test_no_fast_model_leaves_the_single_model_setup_alone():
+    from hobbit.llm import fast_config_from_env
+    assert fast_config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                                 "HOBBIT_LLM_MODEL": "claude-sonnet-5",
+                                 "HOBBIT_LLM_KEY": "k"}) is None
+
+
+def test_the_fast_client_shares_everything_but_the_model():
+    from hobbit.llm import fast_config_from_env
+    env = {"HOBBIT_LLM_URL": "https://api.ppq.ai",
+           "HOBBIT_LLM_MODEL": "claude-sonnet-5",
+           "HOBBIT_LLM_FAST_MODEL": "claude-haiku-4.5",
+           "HOBBIT_LLM_KEY": "sk-test"}
+    main, fast = config_from_env(env), fast_config_from_env(env)
+    assert main.model == "claude-sonnet-5"
+    assert fast.model == "claude-haiku-4.5"
+    assert (fast.base_url, fast.api_key, fast.api_style) == \
+           (main.base_url, main.api_key, main.api_style)
+    assert fast.temperature is None      # still a Claude model
+
+
+def test_goal_picks_use_the_fast_client_and_dialogue_does_not():
+    """Three quarters of a run's calls are one-word goal picks. Sending those
+    to the cheap model is where the saving is, without touching the lines a
+    player reads."""
+    from hobbit.game import Game
+
+    class Spy:
+        def __init__(self): self.calls = 0
+        def chat(self, system, user):
+            self.calls += 1
+            return "ADVANCE" if "keyword" in system.lower() else "A line."
+
+    # The mechanical majority goes to the cheap client.
+    good, cheap = Spy(), Spy()
+    game = Game(seed=3, llm=good, llm_fast=cheap)
+    game.player.light_remaining = 99999
+    for i in range(40):
+        game.process_player_input("east" if i % 5 else "wait")
+    assert cheap.calls > 0, "goal picks should have gone to the cheap model"
+
+    # Dialogue still goes to the good one. Checked on a fresh game: forty
+    # turns of marching leaves Bilbo fainting and Thorin dead in the trolls'
+    # clearing, which says nothing about which client was used.
+    good2, cheap2 = Spy(), Spy()
+    fresh = Game(seed=3, llm=good2, llm_fast=cheap2)
+    before = good2.calls
+    fresh.process_player_input("talk to thorin")
+    assert good2.calls > before, "dialogue must still use the good model"
+
+
+def test_one_client_still_works_when_no_fast_model_is_configured():
+    """The single-model setup has to be untouched by all this."""
+    from hobbit.game import Game
+
+    class Spy:
+        def __init__(self): self.calls = 0
+        def chat(self, system, user):
+            self.calls += 1
+            return "ADVANCE" if "keyword" in system.lower() else "A line."
+
+    only = Spy()
+    game = Game(seed=3, llm=only)          # no llm_fast
+    game.player.light_remaining = 99999
+    for i in range(20):
+        game.process_player_input("wait")
+    assert only.calls > 0

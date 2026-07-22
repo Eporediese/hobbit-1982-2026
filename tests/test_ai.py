@@ -53,10 +53,14 @@ def test_clean_handles_token_cut_with_lost_closing_quote():
     assert out == "We march at dawn, Mr. Baggins, and..."
 
 
-def test_clean_still_caps_at_two_sentences():
+def test_clean_caps_by_length_not_by_sentence_count():
+    """This used to assert a flat two-sentence cap. That rule was tuned
+    against a small local model which rambled in long sentences, and it
+    amputated a stronger model's short, punchy dialogue -- so the cap is now
+    a character budget, and three brief sentences survive together."""
     from hobbit.npc import _clean
-    raw = "One is here. Two is here. Three should be gone."
-    assert _clean(raw) == "One is here. Two is here."
+    raw = "One is here. Two is here. Three should stay."
+    assert _clean(raw) == "One is here. Two is here. Three should stay."
 
 
 def test_anachronistic_sauron_is_scrubbed_to_the_necromancer():
@@ -204,3 +208,51 @@ def test_the_lore_guard_forbids_invented_traits():
     from hobbit.npc import _LORE_GUARD
     assert "invent no ages" in _LORE_GUARD
     assert "film" in _LORE_GUARD
+
+
+def test_short_punchy_dialogue_is_not_amputated():
+    """Regression from the first live Sonnet run: a flat two-sentence cap was
+    tuned against a small model that rambled in long sentences. A stronger one
+    writes the way people speak, and the cap cut this to 'Safe? Ha!'"""
+    from hobbit.npc import _clean
+    raw = ("Safe? Ha! There's no such thing on this road, Master Baggins. "
+           "But don't you fret -- you've fourteen dwarves to watch your back.")
+    out = _clean(raw)
+    assert out.startswith("Safe? Ha!")
+    assert "fourteen dwarves" in out
+
+
+def test_a_rambler_is_still_trimmed():
+    """The budget has to bite on the case it was written for."""
+    from hobbit.npc import _clean, REPLY_BUDGET
+    raw = " ".join(
+        f"This is a long and winding sentence number {i} that goes on well "
+        f"past the point of usefulness and really ought to be cut." 
+        for i in range(6))
+    out = _clean(raw)
+    assert len(out) <= REPLY_BUDGET + 120   # one sentence may overshoot
+    assert len(out) < len(raw) / 2
+
+
+def test_a_single_long_sentence_is_never_dropped_entirely():
+    from hobbit.npc import _clean
+    raw = ("I have been thinking about the road ahead and the weather and the "
+           "provisions and whether the ponies will hold out as far as the ford "
+           "and what we shall do about the wargs if they come again in numbers.")
+    assert _clean(raw)          # not None, not empty
+
+
+def test_emphasis_asterisks_keep_their_word():
+    """Live regression: a stronger model stresses a word with *asterisks*, and
+    deleting the span left "Nothing's ever , laddie" -- a broken sentence
+    shown to the player."""
+    from hobbit.npc import _clean
+    out = _clean("Nothing's ever *safe*, laddie, but keep your feet quick.")
+    assert out == "Nothing's ever safe, laddie, but keep your feet quick."
+
+
+def test_stage_directions_are_still_removed():
+    from hobbit.npc import _clean
+    out = _clean("*chuckles and claps Bilbo on the back* Safe enough, laddie.")
+    assert out == "Safe enough, laddie."
+    assert "chuckles" not in out
