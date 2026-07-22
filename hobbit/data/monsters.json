@@ -123,6 +123,10 @@
     "region": "lonely_mountain",
     "is_monster": true,
     "aggressive": true,
-    "stationary": true
+    "stationary": true,
+    "breath": {
+      "every": 3,
+      "text": "Smaug draws breath, and fire rolls the length of the hall."
+    }
   }
 }

@@ -37,6 +37,9 @@ class NPCDef:
         self.is_monster: bool = data.get("is_monster", False)
         self.aggressive: bool = data.get("aggressive", False)
         self.stationary: bool = data.get("stationary", False)
+        # A breath weapon sweeps the whole front rank rather than biting
+        # one fighter -- see Game.breath_attack.
+        self.breath: dict | None = data.get("breath")
         self.wander_chance: float = data.get("wander_chance", 0.35)
         self.trouble_chance: float = data.get("trouble_chance", 0.05)
         self.captured_location: str | None = data.get("captured_location")

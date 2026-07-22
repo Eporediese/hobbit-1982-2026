@@ -985,6 +985,57 @@ class Game:
             npc.disarm_if_lost(item_id)
         self.world.get(cell_id).items.extend(spoils)
 
+    def breath_attack(self, actor: Character, target: Character) -> list[str] | None:
+        """A dragon does not fence. Every few rounds Smaug breathes instead of
+        biting, and the fire takes everyone who has come within reach.
+
+        This is what makes the front rank a real decision rather than free
+        damage. Melee width lets six fight him at once and he could only
+        answer one of them, so numbers alone settled the climax: a full
+        company won every single time. Fire answers the whole rank at once,
+        so bringing more swords now costs more lives -- while a small company
+        still faces fewer, smaller hits, which is why it doesn't simply make
+        a battered party's odds worse.
+
+        Returns None when this isn't a breath round, so the caller falls
+        through to an ordinary attack.
+        """
+        breath = getattr(getattr(actor, "def_", None), "breath", None)
+        if not breath or not actor.alive:
+            return None
+        actor.breath_count = getattr(actor, "breath_count", 0) + 1
+        if actor.breath_count % int(breath.get("every", 3)) != 0:
+            return None
+        loc = self.world.get(actor.location_id)
+        caught = [self.characters[cid] for cid in self.combat_hostiles(actor, loc)]
+        # Bilbo stands in the room's occupants, not its npc list.
+        if (self.player.alive and self.player.location_id == loc.id
+                and not self.unseen(self.player)
+                and self.is_hostile_pair(actor, self.player)):
+            caught.append(self.player)
+        # Only those actually at the front are in the fire's path -- the same
+        # limit that lets them reach him.
+        caught = caught[:loc.melee_width] or [target]
+        actor.add_combat_fatigue()
+        power = actor.effective_attack()
+        if power <= 0:
+            return None
+        messages = [ui.Note(breath.get("text", f"{actor.name} breathes fire."))]
+        fallen: list[Character] = []
+        for victim in caught:
+            # Split across the rank rather than dealt whole to each -- the
+            # fire is wide, not six times as deadly.
+            damage = max(1, self.rng.randint(power // 3, (power * 2) // 3))
+            victim.take_damage(damage)
+            messages.append(ui.sentence(
+                f"{victim.name} is caught in the fire for {damage} damage."))
+            if not victim.alive:
+                fallen.append(victim)
+        for victim in fallen:
+            messages.append(ui.sentence(f"{victim.name} has been defeated!"))
+            messages.extend(self.handle_death(victim))
+        return messages
+
     def handle_death(self, character: Character) -> list[str]:
         messages = []
         loc = self.world.get(character.location_id)

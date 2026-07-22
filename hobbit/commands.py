@@ -202,7 +202,8 @@ def do_attack(game: "Game", actor: Character, cmd: Command) -> list[str]:
         messages.append(Note("You strike -- and the ring slips from your finger as "
                              "you lunge, falling among the stones at your feet. "
                              "They can see you now."))
-    messages += resolve_attack(actor, target, game.rng)
+    swept = game.breath_attack(actor, target)
+    messages += swept if swept is not None else resolve_attack(actor, target, game.rng)
     game.record_event(loc.id, "fight",
                        f"signs of a recent skirmish at {loc.name}")
     if not target.alive:

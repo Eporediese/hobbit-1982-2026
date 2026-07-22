@@ -138,6 +138,13 @@ class Character:
         # battle wears a beast down, so persistence pays. (Monsters recover
         # between fights; see Game._advance_world_turn. And penning prisoners
         # is not fighting, so it costs them nothing -- see combat_hostiles.)
+        #
+        # This does mean a boss weakens as a long fight drags on -- Smaug's
+        # blows drop from 17 to 10 once he tires. That looks backwards, and
+        # exempting bosses was tried; but measured over 40 fights it changed
+        # nothing for a full company (which wins long before he tires) and
+        # halved a battered one's already-slim odds. It is the underdog's
+        # lifeline, so it stays.
         self.fatigue = min(FATIGUE_FAINT, self.fatigue + FATIGUE_PER_COMBAT_ROUND)
 
     def eat(self, food_value: int) -> str:
