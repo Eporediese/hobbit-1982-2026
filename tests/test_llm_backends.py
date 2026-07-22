@@ -171,3 +171,38 @@ def test_anthropic_auth_uses_the_right_headers():
     assert "Authorization" not in captured        # not a bearer token API
     assert captured["anthropic-version"]
     assert "sk-ant-secret" not in captured["_body"]   # header only, never body
+
+
+def test_claude_models_drop_temperature_even_through_a_proxy():
+    """ppq.ai and friends pass the field straight through to Anthropic, which
+    rejects a non-default temperature with a 400 -- so every companion line
+    would fail in production."""
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "claude-sonnet-5",
+                           "HOBBIT_LLM_KEY": "sk-test"})
+    assert cfg.api_style == "openai"      # ppq speaks the OpenAI shape
+    assert cfg.temperature is None
+
+    client = _Fake(cfg, {"choices": [{"message": {"content": "Aye."}}]})
+    client.chat("sys", "usr")
+    _, payload, _ = client.sent
+    assert "temperature" not in payload
+
+
+def test_a_non_claude_model_keeps_its_temperature():
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "glm-5.2",
+                           "HOBBIT_LLM_KEY": "sk-test"})
+    assert cfg.temperature == 0.9
+    client = _Fake(cfg, {"choices": [{"message": {"content": "Aye."}}]})
+    client.chat("sys", "usr")
+    _, payload, _ = client.sent
+    assert payload["temperature"] == 0.9
+
+
+def test_temperature_and_budget_can_be_overridden_from_the_environment():
+    base = {"HOBBIT_LLM_URL": "https://api.ppq.ai", "HOBBIT_LLM_MODEL": "glm-5.2",
+            "HOBBIT_LLM_KEY": "k"}
+    assert config_from_env({**base, "HOBBIT_LLM_TEMPERATURE": "none"}).temperature is None
+    assert config_from_env({**base, "HOBBIT_LLM_TEMPERATURE": "0.3"}).temperature == 0.3
+    assert config_from_env({**base, "HOBBIT_LLM_MAX_TOKENS": "400"}).max_tokens == 400

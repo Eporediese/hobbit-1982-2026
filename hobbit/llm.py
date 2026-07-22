@@ -48,7 +48,10 @@ class LLMConfig:
     # Bearer token for hosted endpoints. Never logged, never echoed into the
     # game -- a companion's dialogue prompt must not be able to reach it.
     api_key: str | None = None
-    temperature: float = 0.9  # a little more variety between lines
+    # A little more variety between lines. None omits it entirely, which is
+    # required for Claude models: they reject a non-default temperature with
+    # a 400, whether reached directly or through an OpenAI-compatible proxy.
+    temperature: float | None = 0.9
     timeout: float = 60.0  # generous enough to survive a cold model load
     max_tokens: int = 90  # room to finish a sentence; _clean trims to two anyway
     keep_alive: str = "15m"  # keep a local model resident between turns
@@ -92,6 +95,17 @@ def config_from_env(env: dict[str, str] | None = None) -> LLMConfig | None:
         # A hosted call has no cold-load to wait out, and a player is watching
         # a web page rather than a terminal -- fail fast and fall back.
         cfg.timeout = float(env.get("HOBBIT_LLM_TIMEOUT", "20"))
+    # Claude rejects a non-default temperature outright -- including when it is
+    # reached through an OpenAI-compatible proxy such as ppq.ai, which passes
+    # the field straight through. Drop it by default for those models rather
+    # than let every companion line 400 in production.
+    if "claude" in model.lower():
+        cfg.temperature = None
+    if "HOBBIT_LLM_TEMPERATURE" in env:
+        raw = env["HOBBIT_LLM_TEMPERATURE"].strip().lower()
+        cfg.temperature = None if raw in ("", "none", "off") else float(raw)
+    if "HOBBIT_LLM_MAX_TOKENS" in env:
+        cfg.max_tokens = int(env["HOBBIT_LLM_MAX_TOKENS"])
     return cfg
 
 
@@ -193,8 +207,9 @@ class LLMClient:
                 "model": self.config.model,
                 "messages": messages,
                 "stream": False,
-                "temperature": self.config.temperature,
                 "max_tokens": self.config.max_tokens,
+                **({} if self.config.temperature is None
+                   else {"temperature": self.config.temperature}),
                 **self.config.options,
             }, self.config.timeout)
             if not data:
@@ -211,7 +226,8 @@ class LLMClient:
             "stream": False,
             "keep_alive": self.config.keep_alive,
             "options": {
-                "temperature": self.config.temperature,
+                **({} if self.config.temperature is None
+                   else {"temperature": self.config.temperature}),
                 "num_predict": self.config.max_tokens,
                 **self.config.options,
             },
