@@ -82,6 +82,26 @@ class SessionStore:
     def path_for(self, name: str) -> Path:
         return self.directory / f"{name}.json"
 
+    def _transcript_path(self, name: str) -> Path:
+        # A sibling of the game save. Kept separate on purpose: the game save
+        # is engine state that the terminal build shares, while the transcript
+        # is the web layer's scrollback (rendered HTML). Loading one must not
+        # depend on the other, and a corrupt transcript must never endanger a
+        # good game.
+        return self.directory / f"{name}.transcript.json"
+
+    def _load_transcript(self, name: str) -> list[str]:
+        path = self._transcript_path(name)
+        if not path.exists():
+            return []
+        try:
+            lines = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return []               # cosmetic; a bad file just means no history
+        if not isinstance(lines, list):
+            return []
+        return [str(x) for x in lines][-self.max_transcript:]
+
     def _new_game(self) -> Game:
         return Game(authentic=self.authentic, llm=self.llm,
                     llm_fast=self.llm_fast)
@@ -113,16 +133,26 @@ class SessionStore:
             if session is not None:
                 session.touch()
                 return session
-            game = self._load_from_disk(name) or self._new_game()
-            session = Session(name=name, game=game)
+            game = self._load_from_disk(name)
+            # Only restore scrollback for a game that actually loaded -- a
+            # fresh start with a leftover transcript file would show history
+            # from a game that no longer exists.
+            transcript = self._load_transcript(name) if game is not None else []
+            session = Session(name=name, game=game or self._new_game(),
+                              transcript=transcript)
             self._sessions[name] = session
             return session
 
     def save(self, name: str) -> None:
         with self._lock:
             session = self._sessions.get(name)
-            if session is not None:
-                save_game(session.game, self.path_for(name))
+            if session is None:
+                return
+            save_game(session.game, self.path_for(name))
+            # And the scrollback, so a restart (every deploy is one) hands the
+            # player back their history, not just their position.
+            self._transcript_path(name).write_text(
+                json.dumps(session.transcript), encoding="utf-8")
 
     def restart(self, name: str) -> Session:
         """Begin the journey again, keeping the old save as a record.
@@ -132,9 +162,15 @@ class SessionStore:
         kilobytes.
         """
         with self._lock:
+            stamp = int(time.time())
             path = self.path_for(name)
             if path.exists():
-                path.replace(path.with_name(f"{name}.{int(time.time())}.bak"))
+                path.replace(path.with_name(f"{name}.{stamp}.bak"))
+            # The old scrollback goes with the old save, or a restarted game
+            # would resume showing the previous journey's history.
+            tpath = self._transcript_path(name)
+            if tpath.exists():
+                tpath.replace(tpath.with_name(f"{name}.{stamp}.transcript.bak"))
             session = Session(name=name, game=self._new_game())
             self._sessions[name] = session
             return session
@@ -172,5 +208,6 @@ class SessionStore:
         """Everyone with a game on disk or in memory, for an admin glance."""
         with self._lock:
             on_disk = {p.stem for p in self.directory.glob("*.json")
-                       if not p.name.endswith((".corrupt.json", ".bak"))}
+                       if not p.name.endswith((".corrupt.json", ".bak",
+                                               ".transcript.json"))}
             return sorted(on_disk | set(self._sessions))

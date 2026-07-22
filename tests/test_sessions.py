@@ -70,7 +70,10 @@ def test_restart_keeps_the_old_journey_as_a_record(store):
 
     restarted = store.restart("alice")
     assert restarted.game.turn == 0
-    backups = list(store.directory.glob("alice.*.bak"))
+    # The game backup, specifically -- restart now also keeps the old
+    # transcript as its own .transcript.bak, so filter that out.
+    backups = [b for b in store.directory.glob("alice.*.bak")
+               if "transcript" not in b.name]
     assert len(backups) == 1
     assert json.loads(backups[0].read_text(encoding="utf-8"))["turn"] > 0
 
@@ -135,3 +138,63 @@ def test_the_store_survives_concurrent_players(store):
     for t in threads: t.join()
     assert not errors
     assert len(store.known_players()) == 6
+
+
+def test_scrollback_survives_a_server_restart(store):
+    """Every deploy restarts the process. The game state already survived;
+    now the visible history does too, so an update doesn't blank the family's
+    screens."""
+    session = store.get("alice")
+    session.game.process_player_input("east")
+    store.record(session, ["<div>== Hobbiton Road ==</div>", "You go east."])
+    store.save("alice")
+
+    fresh = SessionStore(store.directory)          # as if redeployed
+    resumed = fresh.get("alice")
+    assert resumed.transcript == ["<div>== Hobbiton Road ==</div>",
+                                   "You go east."]
+    assert resumed.game.player.location_id == session.game.player.location_id
+
+
+def test_a_fresh_player_gets_no_leftover_scrollback(store):
+    """A transcript file must never attach to a game that didn't load -- that
+    would show history from a game that no longer exists."""
+    store.get("alice")
+    store.record(store.get("alice"), ["old history"])
+    store.save("alice")
+    # remove only the game save, leaving the transcript behind
+    store.path_for("alice").unlink()
+
+    fresh = SessionStore(store.directory)
+    assert fresh.get("alice").transcript == []      # no game -> no history
+
+
+def test_restart_does_not_carry_the_old_scrollback(store):
+    session = store.get("alice")
+    store.record(session, ["a line from the first journey"])
+    store.save("alice")
+
+    restarted = store.restart("alice")
+    assert restarted.transcript == []
+    # and the old scrollback is kept as a record, not destroyed
+    assert list(store.directory.glob("alice.*.transcript.bak"))
+
+
+def test_a_corrupt_transcript_does_not_endanger_the_game(store):
+    session = store.get("alice")
+    session.game.process_player_input("east")
+    store.record(session, ["some history"])
+    store.save("alice")
+    store._transcript_path("alice").write_text("{ not json", encoding="utf-8")
+
+    fresh = SessionStore(store.directory)
+    resumed = fresh.get("alice")
+    assert resumed.transcript == []                       # history lost
+    assert resumed.game.player.location_id != "bag_end"   # but the game is fine
+
+
+def test_known_players_ignores_transcript_files(store):
+    store.get("alice")
+    store.record(store.get("alice"), ["x"])
+    store.save("alice")
+    assert store.known_players() == ["alice"]      # not "alice.transcript"
