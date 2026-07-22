@@ -14,7 +14,8 @@ interface, chosen by `LLMConfig.api_style`:
                 arrives as a list of content blocks.
 
 The brains never see the difference, so which model voices the company is a
-deployment decision -- an environment variable -- rather than a code change.
+deployment decision -- configuration, not a code change. The credential can
+arrive as a mounted file or an environment variable; see `_read_key`.
 
 Design rule: `chat` NEVER raises and NEVER blocks the game for long. On any
 error, timeout, or unreachable server it returns None, and callers fall back
@@ -28,6 +29,7 @@ import json
 import os
 import urllib.request
 from dataclasses import dataclass, field
+from pathlib import Path
 
 OLLAMA = "ollama"
 OPENAI = "openai"
@@ -62,23 +64,55 @@ class LLMConfig:
         return self.api_style in (OPENAI, ANTHROPIC)
 
 
+def _read_key(env: dict[str, str]) -> str | None:
+    """The bearer token, from a file if one is named, else from the variable.
+
+    A file is the better of the two wherever it's available, and is how Docker
+    secrets, Kubernetes secrets and mounted volumes present a credential. It
+    is not inherited by child processes, does not appear in `docker inspect`
+    or `/proc/<pid>/environ`, doesn't get swept into a crash report along with
+    the rest of the environment, and can be rotated by rewriting the file.
+
+    The variable is kept because it is not deprecated and remains the only
+    thing several platforms offer -- Fly and Cloud Run both *deliver* their
+    stored secrets to the process as environment variables, so refusing to
+    read one would mean refusing to run there.
+
+    The strip() matters: a key file written by an editor ends with a newline,
+    and a trailing newline in an Authorization header is a 401 that looks
+    exactly like a wrong key.
+    """
+    path = env.get("HOBBIT_LLM_KEY_FILE")
+    if path:
+        try:
+            return Path(path).read_text(encoding="utf-8").strip() or None
+        except OSError:
+            # Fall through to the variable rather than dying at startup: a
+            # missing secret mount should degrade to scripted companions, not
+            # take the whole server down.
+            pass
+    return (env.get("HOBBIT_LLM_KEY") or "").strip() or None
+
+
 def config_from_env(env: dict[str, str] | None = None) -> LLMConfig | None:
     """Build a config from the environment, or None if AI isn't configured.
 
     Deployment sets these; nothing about the provider is baked into the code:
 
-      HOBBIT_LLM_URL    the endpoint's base URL (including any version path,
-                        e.g. https://api.z.ai/api/paas/v4)
-      HOBBIT_LLM_MODEL  the model name
-      HOBBIT_LLM_KEY    bearer token, if the endpoint wants one
-      HOBBIT_LLM_STYLE  'anthropic', 'openai' or 'ollama' (inferred if unset)
+      HOBBIT_LLM_URL       the endpoint's base URL (including any version
+                           path, e.g. https://api.z.ai/api/paas/v4)
+      HOBBIT_LLM_MODEL     the model name
+      HOBBIT_LLM_KEY       bearer token, if the endpoint wants one
+      HOBBIT_LLM_KEY_FILE  a file to read the token from instead (preferred
+                           in containers -- see _read_key below)
+      HOBBIT_LLM_STYLE     'anthropic', 'openai' or 'ollama' (inferred if unset)
     """
     env = os.environ if env is None else env
     url = env.get("HOBBIT_LLM_URL")
     model = env.get("HOBBIT_LLM_MODEL")
     if not url or not model:
         return None
-    key = env.get("HOBBIT_LLM_KEY") or None
+    key = _read_key(env)
     style = env.get("HOBBIT_LLM_STYLE")
     if not style:
         # Guessing here saves one more thing to get wrong in a deployment

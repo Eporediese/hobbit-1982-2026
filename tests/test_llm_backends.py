@@ -206,3 +206,35 @@ def test_temperature_and_budget_can_be_overridden_from_the_environment():
     assert config_from_env({**base, "HOBBIT_LLM_TEMPERATURE": "none"}).temperature is None
     assert config_from_env({**base, "HOBBIT_LLM_TEMPERATURE": "0.3"}).temperature == 0.3
     assert config_from_env({**base, "HOBBIT_LLM_MAX_TOKENS": "400"}).max_tokens == 400
+
+
+def test_a_key_file_is_preferred_over_the_variable(tmp_path):
+    """A file is how Docker and Kubernetes secrets arrive, and unlike a
+    variable it isn't inherited by child processes or dumped by
+    `docker inspect`."""
+    f = tmp_path / "llm.key"
+    f.write_text("sk-from-file\n", encoding="utf-8")   # editors add a newline
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "glm-5.2",
+                           "HOBBIT_LLM_KEY": "sk-from-env",
+                           "HOBBIT_LLM_KEY_FILE": str(f)})
+    assert cfg.api_key == "sk-from-file"       # file wins
+    assert "\n" not in cfg.api_key             # a trailing newline is a 401
+
+
+def test_a_missing_key_file_degrades_rather_than_crashing(tmp_path):
+    """A secret mount that didn't appear should cost the companions their
+    voices, not take the server down at startup."""
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "glm-5.2",
+                           "HOBBIT_LLM_KEY": "sk-fallback",
+                           "HOBBIT_LLM_KEY_FILE": str(tmp_path / "absent")})
+    assert cfg.api_key == "sk-fallback"
+
+
+def test_the_variable_still_works_because_platforms_only_offer_that():
+    """Fly and Cloud Run deliver stored secrets as environment variables."""
+    cfg = config_from_env({"HOBBIT_LLM_URL": "https://api.ppq.ai",
+                           "HOBBIT_LLM_MODEL": "glm-5.2",
+                           "HOBBIT_LLM_KEY": "  sk-padded  "})
+    assert cfg.api_key == "sk-padded"
