@@ -212,14 +212,26 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(400, {"error":
                                         "A name, please -- letters and spaces."})
             text = str(data.get("text", ""))[:200]
+            word = text.strip().lower()
             session = self.store.get(name)
             game = session.game
 
-            if text.strip().lower() in ("restart", "start again"):
+            if word in ("restart", "start again", "begin again", "new game"):
                 session = self.store.restart(name)
                 game = session.game
-                lines = render(game.describe_location(game.player),
-                               game.annotation_level)
+                lines = [to_html("You set out again from the beginning."),
+                         ""]
+                lines += render(game.describe_location(game.player),
+                                game.annotation_level)
+            elif word in ("quit", "exit", "q", "bye"):
+                # There is no process to quit in a browser, and "Farewell!"
+                # left the player stranded -- one of them typed 'exit' hoping
+                # to start over. Say what actually works here.
+                lines = [f'<span class="echo">&gt; {html.escape(text)}</span>',
+                         to_html("There's no need to leave -- close the tab "
+                                 "whenever you like and your journey waits for "
+                                 "you. To begin again from Bag End, type "
+                                 "'restart'.")]
             elif game.won or game.lost:
                 lines = [to_html("The journey is over. Type 'restart' to "
                                  "begin again.")]

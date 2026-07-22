@@ -236,3 +236,23 @@ def test_the_dockerfile_installs_nothing():
     assert "pip" not in instructions
     assert "requirements" not in instructions.lower()
     assert "hobbit.serve" in instructions
+
+
+def test_quit_and_exit_guide_rather_than_stranding(server):
+    """On a web page there is no process to quit. A player typed 'exit'
+    hoping to restart and got 'Farewell!' with nowhere to go."""
+    for word in ("quit", "exit", "bye"):
+        data = _post(server, "/api/command", {"name": "q", "text": word})
+        joined = " ".join(data["lines"])
+        assert "Farewell" not in joined
+        assert "restart" in joined
+        assert not data["over"]          # the game is not over, just idling
+
+
+def test_restart_shows_the_opening_room(server):
+    """Restart has to land you somewhere, not on a bare confirmation."""
+    _post(server, "/api/command", {"name": "r", "text": "east"})
+    data = _post(server, "/api/command", {"name": "r", "text": "restart"})
+    joined = " ".join(data["lines"])
+    assert "set out again" in joined
+    assert "Bag End" in joined
