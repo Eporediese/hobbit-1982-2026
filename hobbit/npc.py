@@ -180,6 +180,7 @@ class MonsterBrain(NPCBrain):
 # -- Goal-directed agency ---------------------------------------------------
 
 LONELY_MOUNTAIN = "front_gate"  # the party's ultimate destination
+BARREL_STEP = "barrel"          # a way through, but never a step taken alone
 GOAL_REPLAN_INTERVAL = 12       # turns a goal holds before it's reconsidered
 PARTY_LEASH = 2                # rooms a companion may stray from Bilbo before heading back
 HUNGER_FORAGE = 42             # hunger at which an NPC with no food goes foraging
@@ -302,6 +303,12 @@ class GoalBrain(SimpleBrain):
         if not target or target == npc.location_id:
             return None
         direction = game.world.path_step(npc.location_id, target)
+        if direction == BARREL_STEP:
+            # The road east runs through the barrels, so routing points here --
+            # but the barrels carry whoever is standing in them and the gate
+            # shuts behind. A companion who took that step alone would cast off
+            # without Bilbo. Arriving is the whole job: wait to be gathered.
+            return None
         return Command(verb="go", obj=direction) if direction else None
 
     def _scout_step(self, npc: "NPC", game: "Game") -> Command | None:
@@ -321,7 +328,13 @@ class GoalBrain(SimpleBrain):
                 if direction is None:
                     npc.scout_phase = "returning"  # road's end: bring word back
                 else:
-                    ahead = game.world.get(npc.location_id).exits[direction]
+                    ahead = (None if direction == BARREL_STEP
+                             else game.world.destination(npc.location_id, direction))
+                    if ahead is None:
+                        # No further road a scout may walk (the barrels are
+                        # not a thing to scout through) -- take word back.
+                        npc.scout_phase = "returning"
+                        return None
                     if game.room_has_live_monsters(ahead):
                         # Peek from cover rather than blundering in; that
                         # sighting alone is worth carrying back.

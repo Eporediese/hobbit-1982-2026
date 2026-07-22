@@ -124,13 +124,53 @@ class World:
     def get(self, loc_id: str) -> Location:
         return self.locations[loc_id]
 
+    def ways_out(self, loc_id: str, barrel: bool = False):
+        """(direction, destination) pairs a traveller can actually walk.
+
+        The one place that decides what the map connects to what. Barred ways
+        are excluded -- the Elvenking's gate is shut to everyone for ever, so
+        routing anyone through it sends them to stand against it until they
+        starve. Locked ways are included: a door with a key is a door you may
+        yet open.
+
+        The barrel is opt-in, and who opts in matters. It is the only way east
+        of Mirkwood, so route-finding and reachability must both count it or
+        the Mountain drops off the map and every companion's goal quietly
+        dies. But it is not a step an individual may take: it carries whoever
+        is standing in it and the gate shuts behind them, so a companion who
+        walked into it alone would cast off without Bilbo. Route-finding
+        therefore *points* at it, and GoalBrain._move_step stops on arrival
+        rather than stepping in. `destination` leaves it out, so anything
+        resolving a heading to a room -- the scout peeking ahead -- can't
+        follow it either.
+
+        This exists because the traversal was written out three times and only
+        one copy ever learned about barred gates, which left path_step sending
+        the whole company east into the Elvenking's gate for ever.
+        """
+        here = self.get(loc_id)
+        for direction, neighbor in here.exits.items():
+            if direction not in here.barred_exits:
+                yield direction, neighbor
+        if barrel and here.barrel_route:
+            yield "barrel", here.barrel_route
+
+    def destination(self, loc_id: str, direction: str) -> str | None:
+        """Where a direction leads, or None. Use this rather than `exits[d]`:
+        path_step can return "barrel", which is a real way out of the
+        Elvenking's cellars but is not an entry in `exits`."""
+        for heading, neighbor in self.ways_out(loc_id):
+            if heading == direction:
+                return neighbor
+        return None
+
     def path_step(self, start_id: str, target_id: str) -> str | None:
         """Return the direction of the first step on a shortest path from
         `start_id` toward `target_id`, or None if already there or no route
-        exists. Optimistic: it ignores locks/darkness (the actual `go`
-        command still enforces those), so a goal-seeker may stall at a
-        barrier it can't cross -- which reads as the character being held up
-        there."""
+        exists. Optimistic about locks and darkness (the actual `go` command
+        still enforces those), so a goal-seeker may stall at a barrier it can
+        yet open -- which reads as the character being held up there. Not
+        optimistic about barred ways, which never open; see ways_out."""
         if start_id == target_id or target_id not in self.locations:
             return None
         # BFS, remembering how each room was first reached.
@@ -140,7 +180,11 @@ class World:
             current = queue.popleft()
             if current == target_id:
                 break
-            for direction, neighbor in self.get(current).exits.items():
+            # The barrel is included: it is the only way east of Mirkwood, so
+            # leaving it out puts the Mountain out of reach from half the map
+            # and every companion's goal quietly dies. Stepping into it is
+            # forbidden elsewhere -- see GoalBrain._move_step.
+            for direction, neighbor in self.ways_out(current, barrel=True):
                 if neighbor not in came_from:
                     came_from[neighbor] = (current, direction)
                     queue.append(neighbor)
@@ -162,7 +206,9 @@ class World:
         queue = deque([(a, 0)])
         while queue:
             current, dist = queue.popleft()
-            for neighbor in self.get(current).exits.values():
+            # Reachability, not routing: the barrel is a real way through, so
+            # a companion in the cellars is not "9999 rooms away".
+            for _, neighbor in self.ways_out(current, barrel=True):
                 if neighbor == b:
                     return dist + 1
                 if neighbor not in seen:
@@ -185,9 +231,8 @@ class World:
             current = queue.popleft()
             if self.get(current).food_source:
                 return current
-            here = self.get(current)
-            for direction, neighbor in here.exits.items():
-                if direction in here.barred_exits or neighbor in seen:
+            for _, neighbor in self.ways_out(current):
+                if neighbor in seen:
                     continue
                 seen.add(neighbor)
                 queue.append(neighbor)

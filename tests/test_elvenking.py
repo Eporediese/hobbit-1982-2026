@@ -378,3 +378,51 @@ def test_barrel_words_do_nothing_elsewhere():
                     for m in game.process_player_input("take barrel"))
     assert game.player.location_id == before
     assert "no barrel" in msgs.lower()
+
+
+def test_routing_never_sends_anyone_through_a_barred_gate():
+    """Found by soak-testing: path_step walked straight through the
+    Elvenking's gate, which never opens for anyone. Every companion whose goal
+    is the Mountain was being told to go east into it, for ever."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    gate = game.world.get("elvenking_halls_gate")
+    assert "east" in gate.barred_exits          # the premise
+    assert game.world.path_step("elvenking_halls_gate", "front_gate") != "east"
+
+
+def test_the_mountain_stays_reachable_from_behind_the_gate():
+    """The barrel is the only way east, so leaving it out of route-finding
+    drops the Mountain off the map and every companion's goal dies quietly."""
+    from hobbit.game import Game
+    world = Game(seed=1).world
+    assert world.path_step("elvenking_cellars", "front_gate") is not None
+    assert world.distance("elvenking_cellars", "front_gate") < 100
+
+
+def test_a_companion_never_takes_the_barrel_alone():
+    """It carries whoever is standing in it and the gate shuts behind them --
+    so a companion who stepped in while route-finding would cast off without
+    Bilbo. Regression: the whole company did exactly that."""
+    from hobbit.game import Game
+    game = Game(seed=1)
+    game.world.get("elvenking_cellars").locked = False
+    _gather(game, "elvenking_cellars")
+    game._advance_world_turn()
+    left = [c.name for c in game.characters.values()
+            if getattr(c, "def_", None) and c.def_.is_party
+            and c.location_id != "elvenking_cellars"]
+    assert not left, f"cast off without Bilbo: {left}"
+
+
+def test_barred_ways_are_excluded_from_every_traversal():
+    """The traversal was written out three times and only one copy knew about
+    barred gates. They share one definition now; this keeps them sharing it."""
+    from hobbit.game import Game
+    world = Game(seed=1).world
+    for loc in world.locations.values():
+        for direction in loc.barred_exits:
+            headings = [d for d, _ in world.ways_out(loc.id)]
+            assert direction not in headings, f"{loc.id} offers barred {direction}"
+            headings_r = [d for d, _ in world.ways_out(loc.id, barrel=True)]
+            assert direction not in headings_r
