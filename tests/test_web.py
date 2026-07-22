@@ -190,3 +190,49 @@ def test_concurrent_players_do_not_collide(server):
     for t in threads:
         t.join()
     assert not errors
+
+
+# -- the serve entry point -------------------------------------------------
+
+def test_serve_reads_its_config_from_the_environment(tmp_path, monkeypatch):
+    """python -m hobbit.serve must come up from environment alone, with no
+    model configured, and still be a playable server."""
+    import threading
+    import urllib.request
+    from hobbit import serve as serve_module
+
+    monkeypatch.setenv("HOBBIT_SAVES", str(tmp_path / "s"))
+    monkeypatch.delenv("HOBBIT_LLM_URL", raising=False)
+    monkeypatch.delenv("HOBBIT_LLM_MODEL", raising=False)
+
+    llm, fast = serve_module._make_llm()
+    assert llm is None and fast is None          # nothing configured, no crash
+
+    httpd = serve(host="127.0.0.1", port=0, saves=tmp_path / "s")
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    try:
+        with urllib.request.urlopen(
+                f"http://127.0.0.1:{httpd.server_address[1]}/", timeout=5) as r:
+            assert "The Hobbit" in r.read().decode()
+    finally:
+        httpd.store.save_all()      # the shutdown path
+        httpd.shutdown()
+
+
+def test_the_dockerfile_installs_nothing():
+    """The whole point of standard-library-only: the container needs no pip
+    step, and a stray 'pip install' would mean a dependency crept in
+    unnoticed."""
+    from pathlib import Path
+    dockerfile = Path(__file__).resolve().parent.parent / "Dockerfile"
+    if not dockerfile.exists():
+        return
+    # Look at instruction lines only, so a comment explaining *why* there's no
+    # pip step doesn't trip the check that there's no pip step.
+    instructions = "\n".join(
+        line for line in dockerfile.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#"))
+    assert "pip" not in instructions
+    assert "requirements" not in instructions.lower()
+    assert "hobbit.serve" in instructions
