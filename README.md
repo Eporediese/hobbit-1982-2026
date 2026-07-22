@@ -149,9 +149,25 @@ At list rates that puts a full playthrough at about **three cents** on Sonnet,
 or under two on Haiku. A family of five playing through twice costs well under
 a pound. Cost is not a reason to choose one model over another here.
 
-Speed is. Goal picks sit on the turn path, where somebody is waiting for the
-room to appear, so `HOBBIT_LLM_FAST_MODEL` points those at a quicker model
-while dialogue -- the only text a player reads -- stays with the better one.
+One good model for everything is therefore the default and the recommendation.
+
+`HOBBIT_LLM_FAST_MODEL` remains available for anyone who wants it: goal picks
+sit on the turn path, where somebody is waiting for the room to appear, so
+pointing those at a quicker model shaves latency while dialogue -- the only
+text a player reads -- stays with the better one. It is a speed option, not a
+saving; unset, one model does everything.
+
+### Configuring a model
+
+```
+HOBBIT_LLM_URL=https://api.ppq.ai        # or any OpenAI-compatible endpoint
+HOBBIT_LLM_MODEL=claude-sonnet-5
+HOBBIT_LLM_KEY_FILE=/path/to/key         # or HOBBIT_LLM_KEY
+```
+
+`python tools/check_llm.py` makes two real calls and reports what came back,
+which is the only way to catch a provider passing a field through to a model
+that rejects it. Run it before pointing anyone else at the game.
 
 Needs a reachable [Ollama](https://ollama.com) server (or any compatible
 endpoint via `--ollama-url`). An 8B model keeps replies at ~2-3s once warm;
