@@ -46,6 +46,13 @@ FINALE = "treasure_chamber"
 KEEP = ("key", "light", "weapon")        # item types always worth carrying
 
 
+def _captives(game: Game) -> list:
+    """Living companions held somewhere -- they cannot walk to you."""
+    return [c for c in game.characters.values()
+            if getattr(c, "def_", None) and c.def_.is_party
+            and c.alive and c.captured]
+
+
 def choose_command(game: Game, rng: random.Random) -> str:
     """A player who is trying to finish the game and stay alive."""
     player = game.player
@@ -80,6 +87,15 @@ def choose_command(game: Game, rng: random.Random) -> str:
                 and getattr(c, "def_", None) and c.def_.is_monster
                 and not getattr(c, "captured", False)]
     if monsters and game.can_fight_here(loc.id):
+        # Nobody sane picks a fight with a dragon alone. Measured: a full
+        # company kills Smaug 40 times out of 40; Bilbo by himself dies every
+        # time without scratching him.
+        boss = max(monsters, key=lambda m: m.max_health)
+        friends = sum(1 for c in game.characters.values()
+                      if getattr(c, "def_", None) and c.def_.is_party
+                      and c.alive and not c.captured and c.location_id == loc.id)
+        if boss.max_health > 60 and friends < 4:
+            return "wait"
         return f"attack {monsters[0].name}"
 
     # Only if there is room -- otherwise a pack full of gear means "stock up"
@@ -102,9 +118,14 @@ def choose_command(game: Game, rng: random.Random) -> str:
             return f"take {item.name}"
 
     # A guard turns back anyone he can see; the ring is the answer.
-    if "ring" in player.inventory and "ring" not in player.worn:
-        if any(game.guard_at(dest) is not None for dest in loc.exits.values()):
-            return "wear ring"
+    guarded = any(game.guard_at(dest) is not None for dest in loc.exits.values())
+    if "ring" in player.inventory and "ring" not in player.worn and guarded:
+        return "wear ring"
+    # ...and take it off again the moment it isn't needed. The company cannot
+    # follow what they cannot see: they make for the spot where you vanished
+    # and wait there. Left on, the ring strands the whole company behind you.
+    if "ring" in player.worn and not guarded and not game.guard_at(loc.id):
+        return "remove ring"
 
     # A locked door you hold the key to is a door you open.
     for direction, dest in loc.exits.items():
@@ -120,9 +141,23 @@ def choose_command(game: Game, rng: random.Random) -> str:
         alive = sum(1 for c in game.characters.values()
                     if getattr(c, "def_", None) and c.def_.is_party and c.alive
                     and not c.captured)
-        if here >= alive or rng.random() < 0.15:   # or give up waiting
+        # Never cast off without them. Leaving anyone behind a barred gate is
+        # permanent -- routing tells a stranded companion to take the barrel,
+        # and a companion may not take it alone -- so an abandoned company is
+        # abandoned for good, and Bilbo meets Smaug on his own.
+        if _captives(game):
+            return "up"            # back into the halls, and out to find them
+        if here >= alive:
             return "barrel"
         return "wait"
+
+    # Go back for anyone taken. Reaching them frees them (any free companion
+    # will do it too), and sailing without them strands them for good.
+    captives = _captives(game)
+    if captives:
+        step = game.world.path_step(loc.id, captives[0].location_id)
+        if step and step != "barrel":
+            return step
 
     # Errands first, then the Mountain.
     target = FINALE
