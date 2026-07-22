@@ -27,6 +27,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from hobbit.game import Game  # noqa: E402
+from hobbit.llm import (LLMClient, config_from_env,  # noqa: E402
+                        fast_config_from_env)
 from hobbit import ui  # noqa: E402
 
 DIRECTIONS = ["north", "south", "east", "west", "up", "down"]
@@ -190,7 +192,9 @@ _BAD_PROSE = [
     (re.compile(r"\{|\}"), "unformatted placeholder"),
     (re.compile(r"  +"), "double space"),
     (re.compile(r"^[a-z]"), "sentence starts lower-case"),
-    (re.compile(r"\.\s*\."), "doubled full stop"),
+    # An ellipsis is prose, not a fault -- match a full stop, a space and
+    # another full stop, but never the "..." a character trails off with.
+    (re.compile(r"(?<!\.)\.\s+\.(?!\.)"), "doubled full stop"),
     (re.compile(r"\bs's\b"), "malformed possessive"),
 ]
 
@@ -254,9 +258,25 @@ def check_state(game: Game, found: Counter, examples: dict) -> None:
 
 # -- one path ---------------------------------------------------------------
 
-def play(seed: int, turns: int, verbose: bool = False) -> dict:
+def make_llm():
+    """A model client from the environment, or (None, None).
+
+    Costs real money, so it is opt-in: the scripted run exercises the same
+    mechanics for nothing. What this adds is the dialogue path -- prompts,
+    replies, the cleaner -- which is where a bad model response would reach a
+    player.
+    """
+    cfg = config_from_env()
+    if cfg is None:
+        return None, None
+    fast_cfg = fast_config_from_env()
+    return LLMClient(cfg), (LLMClient(fast_cfg) if fast_cfg else None)
+
+
+def play(seed: int, turns: int, verbose: bool = False, llm=None,
+         llm_fast=None) -> dict:
     rng = random.Random(seed * 7919)
-    game = Game(seed=seed)
+    game = Game(seed=seed, llm=llm, llm_fast=llm_fast)
     game.player.light_remaining = 40  # a torch's worth; not infinite
     found: Counter = Counter()
     examples: dict[str, str] = {}
@@ -305,14 +325,25 @@ def main() -> int:
     ap.add_argument("--turns", type=int, default=400)
     ap.add_argument("--seed", type=int, help="replay a single path")
     ap.add_argument("-v", "--verbose", action="store_true")
+    ap.add_argument("--ai", action="store_true",
+                    help="drive companions with the configured model (costs money)")
     args = ap.parse_args()
+
+    llm = llm_fast = None
+    if args.ai:
+        llm, llm_fast = make_llm()
+        if llm is None:
+            print("--ai: no model configured (see tools/check_llm.py).")
+            return 2
+        print(f"AI on: {llm.config.model}"
+              + (f", goals via {llm_fast.config.model}" if llm_fast else ""))
 
     seeds = [args.seed] if args.seed is not None else range(1, args.seeds + 1)
     totals: Counter = Counter()
     examples: dict[str, str] = {}
     results = []
     for seed in seeds:
-        r = play(seed, args.turns, args.verbose)
+        r = play(seed, args.turns, args.verbose, llm, llm_fast)
         results.append(r)
         totals.update(r["found"])
         for k, v in r["examples"].items():
