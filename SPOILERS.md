@@ -208,10 +208,12 @@ only then are you told you have won. Treasure that fell with the dead, or that
 is still lying in a goblin cell, is not counted -- only what the company
 actually carried out.
 
-## Purist mode's broken locks
+## Purist mode's locks
 
-In purist mode `open` misbehaves exactly as the original's did, which leaves
-**the Trolls' Cave, the Goblin Dungeon and the Secret Door** permanently
-unreachable -- and the game may not be winnable. That is the point of the mode.
-The enhanced game fixes it: `open` checks the room the door leads to, rather
-than only the one you are standing in.
+In purist mode `open` behaves exactly as the original's did: it checks only the
+room you are standing in, never the room the door leads to. That leaves **the
+Trolls' Cave, the Goblin Dungeon and the Secret Door** unreachable, and the
+game may not be winnable. That is the point of the mode, and it is worth
+understanding rather than laughing at -- the fix costs a few bytes of state per
+door, which is precisely what a 48K machine did not have spare. The enhanced
+game checks the room the door leads to.

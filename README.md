@@ -6,6 +6,40 @@ Lonely Mountain), Gandalf and the thirteen dwarves as autonomous companions,
 and the original's hunger/fatigue mechanic -- not a byte-exact port of the
 original BASIC source.
 
+## Why this game
+
+Beam Software's *The Hobbit* was extraordinary, and it is worth saying plainly
+why before this README starts listing things it repaired.
+
+In 1982 the state of the art was a room, a list of nouns, and a parser that
+understood two words. Philip Mitchell and Veronika Megler shipped a game in
+which **the other characters carried on without you**. Gandalf wandered off.
+Thorin sang about gold. The dwarves got themselves captured, picked things up,
+lost them, and occasionally solved a puzzle you were still standing in front
+of. Come back to a room and it had changed while you were gone. Nothing else
+did that for years, and nothing else on a 48K machine had any business doing it
+at all. Its parser, Inglish, took full sentences, chained clauses with *and*
+and *then*, and let you address characters directly -- telling a dwarf to pick
+something up and carry it for you is 1982, not a modern convenience. Both are
+still in this recreation because they were never mine to add.
+
+And whoever wrote it had plainly read the book and loved it. The dwarves are
+distinct, the Elvenking's halls feel like a trap that has to be *escaped*
+rather than fought, and the game trusts you to know why a small silver key
+matters. It is a reading of Tolkien, not a licence being spent.
+
+What it lacked was room. Persistent characters need memory to remember
+anything; ambition on that scale needs cycles the hardware simply did not have.
+So the seams show -- locks that could not be opened, prose promising exits that
+were never built, a hunger loop that told you to eat and then refused the
+command. Those are not design failures. They are a game reaching past its
+machine, and mostly getting there.
+
+This recreation keeps the reach and gives it the room. Every mechanic here that
+sounds modern -- companions with goals, characters who know when a friend has
+fallen, a world that moves while you are elsewhere -- is Beam's idea, running
+on hardware they would have killed for.
+
 > **This README is deliberately spoiler-light.** It tells you how to run the
 > game and what its systems are, not how to solve it. If you'd rather read the
 > puzzles, the secrets and the full mechanics up front, everything is written
@@ -99,7 +133,8 @@ Gandalf and the dwarves have **agency and personality**:
 
 Every model call has a silent fallback to the scripted behaviour, so a slow,
 missing, or crashing model never breaks the game. In purist mode the whole AI
-layer is off and the characters revert to the aimless 1982 random walk.
+layer is off and the characters revert to the original's own wandering --
+which was itself remarkable for 1982, just undirected.
 
 Needs a reachable [Ollama](https://ollama.com) server (or any compatible
 endpoint via `--ollama-url`). An 8B model keeps replies at ~2-3s once warm;
@@ -112,7 +147,8 @@ multiplayer web version is planned next.
 **Which game you are playing is chosen when you start it, and holds for the
 whole journey.** Purist and enhanced are different worlds, not two views of the
 same one -- the map is a real object in one and wall flavour in the other, locks
-work in one and misbehave in the other. Switching mid-journey would rearrange
+work in one and behave as they originally did in the other. Switching
+mid-journey would rearrange
 the world around a company already standing in it, so it isn't offered.
 
 ```
@@ -120,12 +156,18 @@ python main.py            # the enhanced game
 python main.py --purist   # the raw 1982-flavoured experience
 ```
 
-In purist mode you get reverted room descriptions, no scenery/examine system,
-the original's quirky locks -- which leave some rooms unreachable and may leave
-the game unwinnable -- and the original's hunger death spiral. No colour, no
-meta-commentary. It reproduces the *classes* of period jank; it is not a
-byte-exact reproduction of Beam Software's actual game, which was never
-available to copy from.
+Purist is the 1982 experience as it actually played: reverted room
+descriptions, no scenery/examine system, the original's locks -- which leave
+some rooms unreachable and can leave the game unwinnable -- and its hunger
+loop, which tells you to eat and then declines the command. No colour, no
+meta-commentary.
+
+Those limits are period-accurate rather than period-mocking. A 48K machine had
+no room for the checks that would have caught them, and playing this mode is
+the clearest way to feel how much the original was attempting with how little.
+It reproduces the *classes* of constraint the original worked under; it is not
+a byte-exact reproduction of Beam Software's game, which was never available
+to copy from.
 
 In the enhanced game, anything added for this recreation is **shown in cyan**,
 so you can always tell a modern addition from 1982 without being lectured
@@ -133,8 +175,9 @@ about it. That is the whole of the annotation: there is no commentary layer
 and nothing to configure.
 
 Command chaining (`and`/`then`) and addressing companions directly are kept in
-every mode -- they are *not* additions; the real 1982 game's Inglish parser
-genuinely supported both.
+every mode -- they are *not* additions. Inglish did both in 1982, and taking
+them out to make this recreation look more generous would be a lie about what
+the original could do.
 
 ## Architecture
 
