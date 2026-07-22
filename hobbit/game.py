@@ -1499,17 +1499,38 @@ class Game:
         return msgs, False
 
     def _resolve_rescues(self) -> list[str]:
-        """Reaching a captive companion frees them: they rejoin the company
-        on the spot (their goal machinery takes over again next turn)."""
+        """Reaching a captive companion frees them: they rejoin the company on
+        the spot (their goal machinery takes over again next turn).
+
+        Any free companion will do it, not only Bilbo. A dwarf who walks into
+        the cell where his cousin is chained and steps over him to look at the
+        gold is not a character anyone wants in their company -- and it left a
+        rescue impossible while the player was elsewhere, even with half the
+        company standing in the room."""
         messages: list[str] = []
         for npc in self.characters.values():
-            if (isinstance(npc, NPC) and npc.def_.is_party and npc.alive
-                    and npc.captured and npc.location_id == self.player.location_id):
-                npc.captured = False
-                npc.goal_kind = None  # replan: fall back in with the company
-                messages.append(f"You strike off {npc.name}'s bonds -- {npc.name} "
-                                 "is free!")
-                self.company_news(f"{npc.name} was rescued from the goblins")
+            if not (isinstance(npc, NPC) and npc.def_.is_party and npc.alive
+                    and npc.captured):
+                continue
+            by_player = npc.location_id == self.player.location_id
+            rescuer = None
+            if not by_player:
+                rescuer = next(
+                    (c for c in self.characters.values()
+                     if isinstance(c, NPC) and c.def_.is_party and c.alive
+                     and not c.captured and c.location_id == npc.location_id),
+                    None)
+            if not by_player and rescuer is None:
+                continue
+            npc.captured = False
+            npc.goal_kind = None  # replan: fall back in with the company
+            if by_player:
+                messages.append(f"You strike off {npc.name}'s bonds -- "
+                                f"{npc.name} is free!")
+            else:
+                messages.append(ui.sentence(
+                    f"{rescuer.name} cuts {npc.name} loose."))
+            self.company_news(f"{npc.name} was rescued")
         return messages
 
     def _resolve_burials(self) -> list[str]:

@@ -124,16 +124,34 @@ def test_following_a_companion_makes_them_lead_the_march():
 def test_company_stays_with_bilbo_while_he_follows_a_leader():
     """'The company catches up' must mean they're actually here. The follow
     move used to resolve after everyone else acted, so the dwarves escorted
-    Bilbo to the room he was about to leave and trailed a room behind forever."""
+    Bilbo to the room he was about to leave and trailed a room behind forever
+    -- the whole company, every turn, with no way to converge.
+
+    The assertion allows a couple of stragglers mid-march but none once the
+    march halts. Companions now stop to pick things up (a fallen friend's
+    blade, a key), which costs that character the turn, so one or two being a
+    room behind at any instant is the feature working. The original bug looked
+    different: everyone behind, permanently, catching up never."""
     game = Game(seed=1)
     game.process_player_input("follow thorin")
     for _ in range(10):
         game.process_player_input("wait")
+    company = [c for c in game.characters.values()
+               if c is not game.player and getattr(c, "def_", None)
+               and c.def_.is_party and c.alive]
     here = game.player.location_id
-    strays = [c.name for c in game.characters.values()
-              if c is not game.player and getattr(c, "def_", None)
-              and c.def_.is_party and c.alive and c.location_id != here]
-    assert not strays, f"companions left behind: {strays}"
+    strays = [c.name for c in company if c.location_id != here]
+    assert len(strays) <= 3, f"the whole company is trailing: {strays}"
+
+    # Halt, and they must all close up -- which the original bug never did.
+    game.process_player_input("unfollow")
+    for _ in range(4):
+        game.process_player_input("wait")
+    here = game.player.location_id
+    left = [c.name for c in company
+            if c.alive and not c.captured and c.location_id != here
+            and not c.def_.is_scout]        # the scout ranges by design
+    assert not left, f"companions never caught up: {left}"
 
 
 def test_leader_returns_to_the_ranks_when_you_stop_following():

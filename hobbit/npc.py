@@ -132,7 +132,21 @@ class SimpleBrain(NPCBrain):
         if npc.def_.stationary:
             return None
 
+        # Before deciding where to go, deal with what is in front of you.
+        acted = self._situational_action(npc, game, loc)
+        if acted is not None:
+            return acted
+
         return self._move_step(npc, game, loc)
+
+    def _situational_action(self, npc: "NPC", game: "Game", loc) -> Command | None:
+        """What this character does about what is in this room, if anything.
+
+        The 1982 routine had no answer to that question: a dwarf walked past a
+        fallen friend's sword, past the key to the door in front of him, and
+        past a companion hanging in a web. Goal-seeking brains override this.
+        """
+        return None
 
     def _move_step(self, npc: "NPC", game: "Game", loc) -> Command | None:
         """The wander step -- overridden by goal-seeking brains. The base
@@ -181,6 +195,8 @@ class MonsterBrain(NPCBrain):
 
 LONELY_MOUNTAIN = "front_gate"  # the party's ultimate destination
 BARREL_STEP = "barrel"          # a way through, but never a step taken alone
+# Items no companion picks up: the puzzles they unlock are the player's.
+PLAYERS_OWN = frozenset({"ring", "thorin_map"})
 GOAL_REPLAN_INTERVAL = 12       # turns a goal holds before it's reconsidered
 PARTY_LEASH = 2                # rooms a companion may stray from Bilbo before heading back
 HUNGER_FORAGE = 42             # hunger at which an NPC with no food goes foraging
@@ -197,6 +213,81 @@ class GoalBrain(SimpleBrain):
     are inherited unchanged from SimpleBrain. In purist/authentic mode this
     falls back to the original random walk, keeping the 1982 characters as
     aimless as they always were."""
+
+    def _situational_action(self, npc: "NPC", game: "Game", loc) -> Command | None:
+        """Act on what is in this room, before deciding where to walk next.
+
+        Each of these is something the character can plainly see and plainly
+        do, and each was previously the player's job alone -- so a companion
+        would stand in a room holding the key to the door beside him, or walk
+        past a friend hanging in a web, and do nothing about it. They are
+        ordered by how much it would cost to walk away.
+
+        Everything goes through the ordinary verb handlers, so the usual rules
+        apply unchanged: carrying weight, darkness, locks, who owns what.
+        """
+        if game.authentic:
+            return None   # the 1982 characters noticed nothing; that's the point
+
+        # (No "light the torch" impulse: Game.carries_light already counts an
+        # unlit torch in the pack as light, so a companion carrying one has
+        # nothing to decide and one who isn't has nothing to light. The branch
+        # was written, found unreachable, and removed.)
+
+        # Everything past this point costs a turn, and a companion who stops
+        # to pocket a coin while the company marches on is left behind -- one
+        # room becomes two becomes lost. So only ever dawdle while actually
+        # standing with them.
+        if npc.location_id != game.player_beacon():
+            return None
+
+        # A door you hold the key to, in front of you.
+        for direction, dest in loc.exits.items():
+            room = game.world.get(dest)
+            if room.locked and room.key_item and room.key_item in npc.inventory:
+                return Command(verb="open", obj="door")
+
+        # A better blade than the one in hand -- a fallen friend's, usually.
+        held = game.items.get(npc.wielded).damage if npc.wielded else 0
+        for item_id in loc.items:
+            item = game.items.get(item_id)
+            if (item.is_weapon and item.damage > held and item.takeable
+                    and game.can_carry(npc, item)):
+                return Command(verb="take", obj=item.name)
+
+        # Treasure is worth carrying -- it is what the whole journey is for,
+        # and the reckoning counts the company's haul, not Bilbo's.
+        #
+        # But never the things the story turns on. A companion who pocketed
+        # the moon-letter key left the player walking back to the library for
+        # a key that was already in Dwalin's coat; and one who pocketed the
+        # ring would have made the Elvenking's halls impassable, because only
+        # Bilbo can walk past the guard unseen. That is a soft-lock created by
+        # helpfulness. Keys and the ring are the burglar's business.
+        for item_id in loc.items:
+            item = game.items.get(item_id)
+            if not item.takeable or not game.can_carry(npc, item):
+                continue
+            if item.type == "key" or item_id in PLAYERS_OWN:
+                continue
+            if item.type == "light" or item.value > 0:
+                return Command(verb="take", obj=item.name)
+
+        # A companion who has run out of food, when you have some to spare.
+        # Left to the upkeep rules a foodless dwarf walks away to forage;
+        # sharing keeps the company together, which is the whole point of one.
+        if len(game.carried_food(npc)) > 2:
+            for other_id in loc.npcs:
+                other = game.characters.get(other_id)
+                if (other is not npc and isinstance(other, NPC)
+                        and other.def_.is_party and other.alive
+                        and not other.captured
+                        and not game.carried_food(other)
+                        and other.hunger > HUNGER_FORAGE * 0.6):
+                    food = game.carried_food(npc)[0]
+                    return Command(verb="give", obj=game.items.get(food).name,
+                                   indirect=other.name)
+        return None
 
     def _move_step(self, npc: "NPC", game: "Game", loc) -> Command | None:
         if game.authentic:
