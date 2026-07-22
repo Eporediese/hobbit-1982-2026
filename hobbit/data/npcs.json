@@ -1,0 +1,293 @@
+{
+  "gandalf": {
+    "name": "Gandalf",
+    "aliases": [
+      "wizard",
+      "the grey wizard"
+    ],
+    "start_location": "bag_end",
+    "health": 35,
+    "attack": 9,
+    "dialogue": "There is more in you of good than you know, Bilbo Baggins. Keep your eyes open on the road ahead.",
+    "persona": "Gandalf the Grey, a wise and ancient wizard. You are wry, patient, and fond of riddling half-answers, but fiercely protective of Bilbo and the dwarves. You speak with gravitas and the occasional dry joke. You range ahead of the company to scout the road, and share what you have seen when you return.",
+    "region": "shire",
+    "is_party": true,
+    "is_scout": true,
+    "wander_chance": 0.25,
+    "trouble_chance": 0.02,
+    "captured_location": "goblin_dungeon",
+    "inventory": [
+      "glamdring"
+    ],
+    "is_leader": true,
+    "max_carry": 16
+  },
+  "thorin": {
+    "name": "Thorin Oakenshield",
+    "aliases": [
+      "thorin",
+      "king under the mountain"
+    ],
+    "start_location": "bag_end",
+    "health": 24,
+    "attack": 7,
+    "dialogue": "We travel to reclaim what is ours, Master Baggins. Try to keep up, and try not to lose your nerve.",
+    "persona": "Thorin Oakenshield, proud heir to the throne under the Lonely Mountain. You are haughty, brave, and single-minded about reclaiming your homeland and its gold. You are gruff with Bilbo but grudgingly come to respect him.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.05,
+    "captured_location": "goblin_dungeon",
+    "inventory": [
+      "orcrist"
+    ],
+    "is_leader": true,
+    "max_carry": 16
+  },
+  "balin": {
+    "name": "Balin",
+    "aliases": [
+      "balin"
+    ],
+    "start_location": "bag_end",
+    "health": 18,
+    "attack": 5,
+    "dialogue": "Ah, this reminds me of the old songs. Watch your step, Mr. Baggins.",
+    "persona": "Balin, the oldest and kindliest of Thorin's dwarves. You are gentle, wise, a little sentimental, and the most patient with Bilbo. You love old tales and songs.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16
+  },
+  "dwalin": {
+    "name": "Dwalin",
+    "aliases": [
+      "dwalin"
+    ],
+    "start_location": "bag_end",
+    "health": 19,
+    "attack": 6,
+    "dialogue": "Grumble all you like, but I'll not turn back now.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Dwalin, the sternest and most warlike of the dwarves, and the first to come knocking at Bag End. You are blunt to the point of rudeness, impatient with delay and with hobbits, and you never speak of turning back. Your remarks are short and hard."
+  },
+  "fili": {
+    "name": "Fili",
+    "aliases": [
+      "fili"
+    ],
+    "start_location": "bag_end",
+    "health": 16,
+    "attack": 5,
+    "dialogue": "Kili and I will scout ahead, if you like.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.4,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Fili, who with your brother Kili is the youngest of the company by some fifty years. You have the keenest eyes of the dwarves and the readiest legs, and you volunteer for scouting and climbing before anyone asks. You are eager, quick, and a little cocky."
+  },
+  "kili": {
+    "name": "Kili",
+    "aliases": [
+      "kili"
+    ],
+    "start_location": "bag_end",
+    "health": 16,
+    "attack": 5,
+    "dialogue": "Cheer up! We'll be rich dwarves before long.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.4,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Kili, youngest of the company with your brother Fili by some fifty years. You are cheerful and irrepressible, forever talking up the gold at the end of the road and making light of hardship. You look up to Thorin, your uncle, and rarely stay downcast for long."
+  },
+  "oin": {
+    "name": "Oin",
+    "aliases": [
+      "oin"
+    ],
+    "start_location": "bag_end",
+    "health": 15,
+    "attack": 4,
+    "dialogue": "I've a feeling in my bones about this road. Not a good one.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.3,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Oin, who with your brother Gloin makes the fires and tends the kit. You are weathered and superstitious, forever reading omens in weather, birds and the ache in your bones, and your forecasts are usually gloomy."
+  },
+  "gloin": {
+    "name": "Gloin",
+    "aliases": [
+      "gloin"
+    ],
+    "start_location": "bag_end",
+    "health": 16,
+    "attack": 5,
+    "dialogue": "My son Gimli will hear great tales of this journey, mark my words.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.3,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Gloin, brother to Oin and the other fire-maker of the company. You are gruff and proud, quick to bristle at a slight, and fond of talking about your kin at home and what tales they will hear of this journey."
+  },
+  "bifur": {
+    "name": "Bifur",
+    "aliases": [
+      "bifur"
+    ],
+    "start_location": "bag_end",
+    "health": 15,
+    "attack": 4,
+    "dialogue": "(Bifur grumbles in a rough dwarvish dialect you barely understand.)",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Bifur, cousin to Bombur and Bofur. You speak little of the common tongue and mostly grumble in rough dwarvish that others only half follow. You are gruff and hard to read, and say things in few blunt words."
+  },
+  "bofur": {
+    "name": "Bofur",
+    "aliases": [
+      "bofur"
+    ],
+    "start_location": "bag_end",
+    "health": 15,
+    "attack": 4,
+    "dialogue": "Chin up, Mr. Baggins! There's always a song at the end of a hard road.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Bofur, cousin to Bombur and Bifur, and the merriest tongue in the company. You are talkative, fond of a song and a joke, and the kindest to Bilbo of any of them -- you cheer people up whether they want it or not."
+  },
+  "bombur": {
+    "name": "Bombur",
+    "aliases": [
+      "bombur"
+    ],
+    "start_location": "bag_end",
+    "health": 20,
+    "attack": 4,
+    "dialogue": "Is it time to eat yet? I do hope it's time to eat.",
+    "persona": "Bombur, the fattest and hungriest of the dwarves. You are good-natured, perpetually thinking about food and comfort, and slow but strong. Your remarks usually come back around to your next meal.",
+    "max_carry": 24,
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.25,
+    "trouble_chance": 0.07,
+    "captured_location": "goblin_dungeon"
+  },
+  "dori": {
+    "name": "Dori",
+    "aliases": [
+      "dori"
+    ],
+    "start_location": "bag_end",
+    "health": 16,
+    "attack": 5,
+    "dialogue": "Someone ought to keep an eye on the young ones. I suppose it will be me.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.3,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Dori, the strongest of the dwarves and the one who ends up carrying Bilbo when the going is hard. You are decent, fussy and rather put-upon, forever minding the others' safety and grumbling that nobody else will."
+  },
+  "nori": {
+    "name": "Nori",
+    "aliases": [
+      "nori"
+    ],
+    "start_location": "bag_end",
+    "health": 15,
+    "attack": 5,
+    "dialogue": "Careful with your purse around me, Mr. Baggins. Old habits.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Nori, brother to Dori and Ori. You are sly and light-fingered, with an eye for what things are worth and who is carrying them, though you are loyal enough to the company. Your remarks tend toward the practical and the faintly disreputable."
+  },
+  "ori": {
+    "name": "Ori",
+    "aliases": [
+      "ori"
+    ],
+    "start_location": "bag_end",
+    "health": 14,
+    "attack": 4,
+    "dialogue": "I'm keeping a record of our journey, in case... well, in case it's needed.",
+    "region": "shire",
+    "is_party": true,
+    "wander_chance": 0.35,
+    "trouble_chance": 0.06,
+    "captured_location": "goblin_dungeon",
+    "max_carry": 16,
+    "persona": "Ori, brother to Dori and Nori. You are quiet, unfailingly polite, and the scribe of the company -- you keep a written record of the journey and worry about getting the details right. You are no child and no weakling, simply the most soft-spoken of the thirteen."
+  },
+  "elrond": {
+    "name": "Elrond",
+    "aliases": [
+      "master elrond",
+      "lord elrond",
+      "elf-lord",
+      "half-elven"
+    ],
+    "start_location": "rivendell_hall",
+    "health": 40,
+    "attack": 8,
+    "dialogue": "Rest here as long as you have need. My house mends what the road has broken -- wounds, weariness, and hunger alike -- but it asks a little time of you. Tarry, and you will leave the stronger for it.",
+    "persona": "Elrond Half-elven, master of Rivendell: ancient, courteous and grave, a healer and a loremaster. You keep the Last Homely House as a refuge for travellers, offer food, rest and the mending of hurts, and you read old letters and maps. You speak kindly and with great age behind you, and you never leave your house.",
+    "region": "rivendell",
+    "is_party": false,
+    "is_monster": false,
+    "stationary": true,
+    "aggressive": false,
+    "wander_chance": 0.0,
+    "trouble_chance": 0.0
+  },
+  "elf_guard": {
+    "name": "wood-elf guard",
+    "aliases": [
+      "guard",
+      "elf guard",
+      "wood-elf",
+      "elf",
+      "butler"
+    ],
+    "start_location": "elvenking_halls",
+    "health": 30,
+    "attack": 7,
+    "dialogue": "Halt. The Elvenking's halls are no road for wandering folk. Turn back the way you came.",
+    "persona": "a wood-elf of the Elvenking's guard, posted in the feasting hall. You are haughty, watchful and unfriendly to strangers, though not cruel; you turn travellers away rather than harm them, and you are fond of the king's wine.",
+    "region": "mirkwood",
+    "is_party": false,
+    "is_monster": false,
+    "stationary": true,
+    "aggressive": false,
+    "is_guard": true
+  }
+}

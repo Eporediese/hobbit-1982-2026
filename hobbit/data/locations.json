@@ -1,0 +1,1104 @@
+{
+  "bag_end": {
+    "name": "Bag End",
+    "description": "A comfortable hobbit-hole with round doors and windows, all the comforts a body could want.",
+    "original_description": "A comfortable hobbit-hole with round doors and windows, all the comforts a body could want. A well-worn map of the Wilderland hangs by the door.",
+    "exits": {
+      "south": "bag_end_garden",
+      "east": "hobbiton_road"
+    },
+    "items": [
+      "walking_stick",
+      "torch",
+      "thorin_map"
+    ],
+    "bugfix_note": "Bugfix: the room used to state 'a well-worn map hangs by the door' as fixed prose, so it still said that even after you'd taken the map. The map is now a real item listed under 'You see', and the description no longer hardcodes it. (Authentic mode keeps the old flavor line, since there's no map item there.)",
+    "scenery": [
+      {
+        "name": "door",
+        "aliases": [
+          "round door",
+          "front door"
+        ],
+        "description": "A perfectly round green door with a shiny brass knob, set in the middle of the hill."
+      }
+    ]
+  },
+  "bag_end_garden": {
+    "name": "The Garden at Bag End",
+    "description": "A tidy garden behind the hobbit-hole. A low garden gate stands at its edge, more hedge-trimming than thoroughfare -- the real way back out to the lane is through the round door to the north.",
+    "original_description": "A tidy garden with a round green door behind you and a low gate ahead onto the lane.",
+    "exits": {
+      "north": "bag_end"
+    },
+    "bugfix_note": "Bugfix: this room's description used to say the gate opened 'onto the lane', implying a second way out that was never built. The text you're reading now is the corrected version -- 'examine gate' has the specifics.",
+    "scenery": [
+      {
+        "name": "gate",
+        "aliases": [
+          "low gate",
+          "garden gate"
+        ],
+        "description": "The garden gate is unlocked and swings freely, but it only opens onto a few more feet of flowerbed hemmed in by hedge. It isn't a through-route -- go north, back into Bag End, to reach the lane.",
+        "bugfix_note": "Bugfix: this room's description used to say the gate opened 'onto the lane', implying a second way out that was never actually built. The text now matches what's really here."
+      },
+      {
+        "name": "door",
+        "aliases": [
+          "round door",
+          "round green door"
+        ],
+        "description": "The round green door back into Bag End. Go north to step through it."
+      }
+    ]
+  },
+  "hobbiton_road": {
+    "name": "Hobbiton Road",
+    "description": "A dusty lane winds between smials and gardens toward the village of Hobbiton.",
+    "exits": {
+      "west": "bag_end",
+      "east": "market_square"
+    }
+  },
+  "market_square": {
+    "name": "Hobbiton Market Square",
+    "description": "Stalls of vegetables and pipe-weed line a small cobbled square.",
+    "exits": {
+      "west": "hobbiton_road",
+      "north": "green_dragon_inn",
+      "east": "bywater_road"
+    },
+    "scenery": [
+      {
+        "name": "stalls",
+        "aliases": [
+          "stall",
+          "vegetables",
+          "pipe-weed"
+        ],
+        "description": "Baskets of carrots and cabbages sit beside neat twists of pipe-weed, none of it for sale to a hobbit in this much of a hurry."
+      }
+    ],
+    "melee_width": 6
+  },
+  "green_dragon_inn": {
+    "name": "The Green Dragon Inn",
+    "description": "A cheerful inn, warm with pipe-smoke and the smell of good ale.",
+    "added_description": "Baskets of fresh loaves line the counter -- more than a traveller could ever carry off.",
+    "exits": {
+      "south": "market_square"
+    },
+    "food_source": true,
+    "staple_food": "bread"
+  },
+  "bywater_road": {
+    "name": "Bywater Road",
+    "description": "The road runs along the edge of the Water, past the mill, toward the eastern borders of the Shire.",
+    "exits": {
+      "west": "market_square",
+      "north": "hobbiton_millpond",
+      "east": "east_road"
+    }
+  },
+  "hobbiton_millpond": {
+    "name": "The Millpond",
+    "description": "Ducks paddle lazily below the creaking sails of the Hobbiton mill.",
+    "exits": {
+      "south": "bywater_road"
+    },
+    "scenery": [
+      {
+        "name": "mill",
+        "aliases": [
+          "sails",
+          "millwheel"
+        ],
+        "description": "The old mill's sails turn slowly in the breeze, grinding away at somebody's flour."
+      }
+    ]
+  },
+  "east_road": {
+    "name": "The East Road",
+    "description": "The road climbs gently out of the Shire, hedgerows giving way to open country.",
+    "exits": {
+      "west": "bywater_road",
+      "east": "edge_of_shire"
+    }
+  },
+  "edge_of_shire": {
+    "name": "The Edge of the Shire",
+    "description": "The last signpost of the Shire stands here. Beyond, the road runs on into wilder lands.",
+    "exits": {
+      "west": "east_road",
+      "east": "lone_lands_1"
+    },
+    "scenery": [
+      {
+        "name": "signpost",
+        "aliases": [
+          "sign"
+        ],
+        "description": "A weathered wooden signpost. One arm points back toward Hobbiton; the other, toward lands no hobbit much cares to name."
+      }
+    ]
+  },
+  "lone_lands_1": {
+    "name": "The Lone-lands",
+    "description": "A bleak, treeless stretch of road, with old ruined watchtowers on the hills to the north.",
+    "exits": {
+      "west": "edge_of_shire",
+      "east": "lone_lands_2"
+    },
+    "scenery": [
+      {
+        "name": "watchtowers",
+        "aliases": [
+          "tower",
+          "towers",
+          "ruins"
+        ],
+        "description": "Crumbling stone watchtowers stand on the hills, empty of any watchers for a long age now."
+      }
+    ]
+  },
+  "lone_lands_2": {
+    "name": "The Lone-lands",
+    "description": "The road grows rougher, and rain clouds gather over the hills.",
+    "exits": {
+      "west": "lone_lands_1",
+      "east": "lone_lands_3"
+    }
+  },
+  "lone_lands_3": {
+    "name": "The Lone-lands",
+    "description": "A cold wind blows across the empty moor. Somewhere ahead, smoke rises from among trees.",
+    "exits": {
+      "west": "lone_lands_2",
+      "east": "trollshaws_approach"
+    }
+  },
+  "trollshaws_approach": {
+    "name": "The Trollshaws",
+    "description": "Gnarled, half-dead trees crowd the road here. There is a smell of woodsmoke and something worse.",
+    "exits": {
+      "west": "lone_lands_3",
+      "east": "trolls_clearing"
+    }
+  },
+  "trolls_clearing": {
+    "name": "The Trolls' Clearing",
+    "description": "A firelit clearing among the trees, littered with bones and the wreckage of a camp.",
+    "exits": {
+      "west": "trollshaws_approach",
+      "down": "troll_cave",
+      "east": "lone_lands_4"
+    },
+    "scenery": [
+      {
+        "name": "fire",
+        "aliases": [
+          "campfire",
+          "bones"
+        ],
+        "description": "A big, badly-tended fire, ringed with gnawed bones best not looked at too closely."
+      }
+    ],
+    "melee_width": 6
+  },
+  "troll_cave": {
+    "name": "The Trolls' Cave",
+    "description": "A dank cave that reeks of troll. Sacks and crates of plundered goods are piled against the walls.",
+    "exits": {
+      "up": "trolls_clearing"
+    },
+    "items": [
+      "sting",
+      "gold_coins_small",
+      "mutton"
+    ],
+    "locked": true,
+    "key_item": "key_troll_cave",
+    "dark": true,
+    "bugfix_note": "Bugfix: this room was permanently unreachable before a fix to 'open' -- the command only ever checked the room you were standing in, never the locked room a door actually led to, so there was no way to unlock a cave you couldn't get inside to open. 'open'/'close' now target the neighboring room the exit leads to.",
+    "scenery": [
+      {
+        "name": "sacks",
+        "aliases": [
+          "crates",
+          "goods"
+        ],
+        "description": "Sacks and crates stolen from travellers over the years, mostly rotten or empty now -- whatever was worth keeping is already lying loose on the floor."
+      }
+    ],
+    "melee_width": 2
+  },
+  "lone_lands_4": {
+    "name": "The Road to Rivendell",
+    "description": "The land begins to rise, and far off you glimpse mountains capped with snow.",
+    "exits": {
+      "west": "trolls_clearing",
+      "east": "rivendell_gate"
+    }
+  },
+  "rivendell_gate": {
+    "name": "The Gates of Rivendell",
+    "description": "A carved stone gateway opens onto a hidden valley, where waterfalls glimmer among the trees.",
+    "exits": {
+      "west": "lone_lands_4",
+      "east": "rivendell_hall"
+    },
+    "scenery": [
+      {
+        "name": "waterfalls",
+        "aliases": [
+          "waterfall"
+        ],
+        "description": "Thin waterfalls thread down the cliffs into the valley, catching the light."
+      }
+    ],
+    "melee_width": 2
+  },
+  "rivendell_hall": {
+    "name": "The Last Homely House",
+    "description": "A great hall full of firelight, song, and the quiet hospitality of Elrond's house.",
+    "added_description": "The elves press waybread and provisions on any traveller bound for the wild.",
+    "exits": {
+      "west": "rivendell_gate",
+      "north": "rivendell_library",
+      "south": "rivendell_garden",
+      "east": "rivendell_bridge"
+    },
+    "items": [
+      "elvish_bread"
+    ],
+    "food_source": true,
+    "scenery": [
+      {
+        "name": "fire",
+        "aliases": [
+          "hearth",
+          "firelight"
+        ],
+        "description": "A broad hearth crackles quietly, giving off more comfort than heat."
+      }
+    ],
+    "melee_width": 6,
+    "staple_food": "elvish_bread"
+  },
+  "rivendell_library": {
+    "name": "Elrond's Library",
+    "description": "Shelves of ancient scrolls line the walls. A reading table stands by the window, well placed to catch the moonlight.",
+    "exits": {
+      "south": "rivendell_hall"
+    },
+    "items": [
+      "moon_key"
+    ],
+    "scenery": [
+      {
+        "name": "shelves",
+        "aliases": [
+          "scrolls",
+          "books"
+        ],
+        "description": "Shelves of ancient scrolls, records, and maps, more than any one traveller could read in a lifetime."
+      },
+      {
+        "name": "table",
+        "aliases": [
+          "reading table",
+          "window"
+        ],
+        "description": "A reading table stands beneath the window, angled to catch the moon at night -- useful, if you had something written in moon-letters to read."
+      }
+    ],
+    "moonlit": true
+  },
+  "rivendell_garden": {
+    "name": "The Gardens of Rivendell",
+    "description": "Terraced gardens overlook a singing river far below.",
+    "exits": {
+      "north": "rivendell_hall",
+      "east": "rivendell_terrace"
+    },
+    "scenery": [
+      {
+        "name": "river",
+        "aliases": [
+          "view"
+        ],
+        "description": "Far below, a river sings quietly over stones, just audible over the birdsong."
+      }
+    ]
+  },
+  "rivendell_terrace": {
+    "name": "A Quiet Terrace",
+    "description": "A stone terrace where elves sit and sing softly under the stars.",
+    "exits": {
+      "west": "rivendell_garden"
+    },
+    "scenery": [
+      {
+        "name": "elves",
+        "aliases": [
+          "elf"
+        ],
+        "description": "The elves nod pleasantly but are lost in their own quiet song -- they're part of the scenery here, not travelling companions."
+      }
+    ]
+  },
+  "rivendell_bridge": {
+    "name": "The Bridge East of Rivendell",
+    "description": "A narrow bridge leads out of the valley toward the looming Misty Mountains.",
+    "exits": {
+      "west": "rivendell_hall",
+      "east": "misty_foothills"
+    }
+  },
+  "misty_foothills": {
+    "name": "Foothills of the Misty Mountains",
+    "description": "Rocky slopes rise ahead of you, the beginning of the long climb into the mountains.",
+    "exits": {
+      "west": "rivendell_bridge",
+      "east": "mountain_path_1"
+    }
+  },
+  "mountain_path_1": {
+    "name": "A Mountain Path",
+    "description": "The path zig-zags up a steep, stony slope.",
+    "exits": {
+      "west": "misty_foothills",
+      "east": "mountain_path_2"
+    },
+    "melee_width": 2
+  },
+  "mountain_path_2": {
+    "name": "A Mountain Path",
+    "description": "Loose scree slides underfoot. The air grows thin and cold.",
+    "exits": {
+      "west": "mountain_path_1",
+      "east": "mountain_path_3"
+    },
+    "melee_width": 2
+  },
+  "mountain_path_3": {
+    "name": "A Mountain Path",
+    "description": "The path narrows along a sheer cliff edge before climbing toward a high pass.",
+    "exits": {
+      "west": "mountain_path_2",
+      "up": "high_pass"
+    },
+    "melee_width": 2
+  },
+  "high_pass": {
+    "name": "The High Pass",
+    "description": "A bitter wind howls through this narrow pass between two great peaks.",
+    "exits": {
+      "down": "mountain_path_3",
+      "east": "storm_ledge"
+    }
+  },
+  "storm_ledge": {
+    "name": "A Storm-battered Ledge",
+    "description": "Lightning splits the sky above; this looks like a dangerous place to shelter for the night.",
+    "exits": {
+      "west": "high_pass",
+      "north": "mountain_ledge_view",
+      "east": "cave_entrance"
+    },
+    "scenery": [
+      {
+        "name": "lightning",
+        "aliases": [
+          "storm",
+          "sky"
+        ],
+        "description": "Lightning stalks between the peaks. Best not to linger in the open."
+      }
+    ],
+    "melee_width": 2
+  },
+  "mountain_ledge_view": {
+    "name": "A High Ledge",
+    "description": "From here you can see for miles across the peaks -- and far below, a dark crack in the mountainside.",
+    "exits": {
+      "south": "storm_ledge"
+    },
+    "bugfix_note": "Bugfix: this room used to hint the crack below was reachable from here (it was never wired up as an exit). 'examine crack' has the specifics.",
+    "scenery": [
+      {
+        "name": "crack",
+        "aliases": [
+          "mountainside",
+          "view"
+        ],
+        "description": "A dark crack splits the mountainside far below -- probably the same cave mouth you could reach from the storm-battered ledge to the south. There's no way down to it from up here; this ledge is just a lookout.",
+        "bugfix_note": "Bugfix: this used to say the crack 'looks like it might lead somewhere out of the weather', implying a route down from this ledge that was never wired up -- the same problem as the garden gate, caught during the follow-up audit."
+      }
+    ],
+    "melee_width": 2
+  },
+  "cave_entrance": {
+    "name": "A Sheltered Cave Mouth",
+    "description": "A dry cave offers shelter from the storm. Its passage slopes down into darkness.",
+    "exits": {
+      "west": "storm_ledge",
+      "down": "goblin_gate"
+    },
+    "melee_width": 2
+  },
+  "goblin_gate": {
+    "name": "A Cracked Rock Wall",
+    "description": "The back of the cave splits open into a goblin-cut tunnel, roughly hewn and foul-smelling.",
+    "exits": {
+      "up": "cave_entrance",
+      "east": "goblin_tunnel_1"
+    },
+    "dark": true,
+    "region": "goblin",
+    "melee_width": 2
+  },
+  "goblin_tunnel_1": {
+    "name": "A Goblin Tunnel",
+    "description": "A twisting tunnel deep under the mountain, echoing with distant shrieks and hammering.",
+    "exits": {
+      "west": "goblin_gate",
+      "east": "goblin_tunnel_2"
+    },
+    "dark": true,
+    "region": "goblin",
+    "melee_width": 2
+  },
+  "goblin_tunnel_2": {
+    "name": "A Goblin Tunnel",
+    "description": "The tunnel forks here. One way leads deeper toward torchlight and noise; another slopes down toward the sound of dripping water.",
+    "exits": {
+      "west": "goblin_tunnel_1",
+      "east": "goblin_throne_room",
+      "south": "gollum_lake_shore"
+    },
+    "dark": true,
+    "region": "goblin",
+    "melee_width": 2
+  },
+  "goblin_throne_room": {
+    "name": "The Great Goblin's Throne Room",
+    "description": "A vast, smoky cavern lit by fires. A crude throne of bones and iron stands here.",
+    "exits": {
+      "west": "goblin_tunnel_2",
+      "down": "goblin_dungeon",
+      "east": "mountain_east_face"
+    },
+    "dark": true,
+    "region": "goblin",
+    "scenery": [
+      {
+        "name": "throne",
+        "aliases": [
+          "bones",
+          "iron throne"
+        ],
+        "description": "A crude throne cobbled together from bones and scrap iron -- currently occupied by someone you'd rather not sit next to."
+      }
+    ],
+    "melee_width": 6
+  },
+  "goblin_dungeon": {
+    "name": "The Goblin Dungeon",
+    "description": "A miserable cell cut into the rock, chained and barred.",
+    "exits": {
+      "up": "goblin_throne_room"
+    },
+    "locked": true,
+    "key_item": "key_goblin_cell",
+    "dark": true,
+    "region": "goblin",
+    "bugfix_note": "Bugfix: like the Trolls' Cave, this cell was permanently unreachable before 'open' was fixed to unlock the room a door leads to, rather than only the room you were already standing in -- which meant captured dwarves could never actually be freed.",
+    "melee_width": 2
+  },
+  "gollum_lake_shore": {
+    "name": "The Shore of an Underground Lake",
+    "description": "A cold, still lake stretches into blackness. Something small and slimy seems to watch from a boat far out on the water.",
+    "exits": {
+      "north": "goblin_tunnel_2",
+      "east": "back_door_tunnel"
+    },
+    "items": [
+      "ring"
+    ],
+    "dark": true,
+    "region": "goblin",
+    "scenery": [
+      {
+        "name": "boat",
+        "aliases": [
+          "creature",
+          "gollum"
+        ],
+        "description": "A small, pale shape crouches in a boat far out on the lake, muttering to itself. It hasn't noticed you -- yet. It doesn't seem inclined to come any closer while you're here."
+      }
+    ]
+  },
+  "back_door_tunnel": {
+    "name": "A Narrow Escape Tunnel",
+    "description": "A cramped tunnel climbs steeply upward, a thin draft of fresh air drifting down from above.",
+    "exits": {
+      "west": "gollum_lake_shore",
+      "up": "mountain_east_face"
+    },
+    "dark": true,
+    "region": "goblin",
+    "melee_width": 2
+  },
+  "mountain_east_face": {
+    "name": "The Eastern Face of the Misty Mountains",
+    "description": "You stumble out into daylight on the far side of the mountains, blinking after the darkness below.",
+    "exits": {
+      "down": "back_door_tunnel",
+      "west": "goblin_throne_room",
+      "east": "eyrie"
+    }
+  },
+  "eyrie": {
+    "name": "The Eagles' Eyrie",
+    "description": "A wide rocky eyrie high on a crag, home to the Great Eagles of the mountains.",
+    "exits": {
+      "west": "mountain_east_face",
+      "down": "carrock"
+    }
+  },
+  "carrock": {
+    "name": "The Carrock",
+    "description": "A great isolated rock rising from the river below, a favorite perch of the eagles.",
+    "exits": {
+      "up": "eyrie",
+      "east": "forest_edge_east"
+    }
+  },
+  "forest_edge_east": {
+    "name": "The Edge of the Forest",
+    "description": "Open grassland gives way to the first trees of a great, dark forest in the east.",
+    "exits": {
+      "west": "carrock",
+      "east": "beorn_gate"
+    }
+  },
+  "beorn_gate": {
+    "name": "Beorn's Gate",
+    "description": "A high wooden gate set in a great thorn hedge, guarding a wide homestead.",
+    "exits": {
+      "west": "forest_edge_east",
+      "east": "beorn_hall"
+    },
+    "scenery": [
+      {
+        "name": "hedge",
+        "aliases": [
+          "thorn hedge"
+        ],
+        "description": "A thick, thorny hedge circles the homestead -- climbing it looks like a bad idea. The gate itself stands open."
+      }
+    ],
+    "melee_width": 6
+  },
+  "beorn_hall": {
+    "name": "Beorn's Hall",
+    "description": "A long wooden hall smelling of honey and animals. Enormous furniture is built for an enormous host.",
+    "added_description": "The table is laden with bread, honey, cream, and nuts -- eat and pack your fill for the road.",
+    "exits": {
+      "west": "beorn_gate",
+      "north": "beorn_stables",
+      "east": "mirkwood_entrance"
+    },
+    "food_source": true,
+    "scenery": [
+      {
+        "name": "furniture",
+        "aliases": [
+          "table",
+          "chair"
+        ],
+        "description": "A table and chairs built to a scale that makes you feel like a child again -- or a very large meal."
+      }
+    ],
+    "melee_width": 6,
+    "staple_food": "bread"
+  },
+  "beorn_stables": {
+    "name": "Beorn's Stables",
+    "description": "Well-kept stalls house sturdy ponies lent to travellers -- for a while, at least.",
+    "exits": {
+      "south": "beorn_hall"
+    },
+    "scenery": [
+      {
+        "name": "ponies",
+        "aliases": [
+          "pony",
+          "stalls"
+        ],
+        "description": "Sturdy ponies stand ready in their stalls, on loan only as far as the edge of Mirkwood -- Beorn wants them back after that."
+      }
+    ],
+    "melee_width": 6
+  },
+  "mirkwood_entrance": {
+    "name": "The Eaves of Mirkwood",
+    "description": "A gloomy archway of trees marks the western edge of Mirkwood forest. Little light seems to pass beyond it.",
+    "exits": {
+      "west": "beorn_hall",
+      "east": "mirkwood_path_1"
+    }
+  },
+  "mirkwood_path_1": {
+    "name": "A Path Through Mirkwood",
+    "description": "The forest closes in overhead, choking out the daylight. The air is thick and stale.",
+    "exits": {
+      "west": "mirkwood_entrance",
+      "east": "mirkwood_path_2"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "melee_width": 2
+  },
+  "mirkwood_path_2": {
+    "name": "A Path Through Mirkwood",
+    "description": "Pale fungus glows faintly on rotting logs. Something rustles in the undergrowth.",
+    "exits": {
+      "west": "mirkwood_path_1",
+      "east": "enchanted_stream"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "melee_width": 2
+  },
+  "enchanted_stream": {
+    "name": "The Enchanted Stream",
+    "description": "A black stream crosses the path here, said to bring deep sleep to any who touch its waters.",
+    "exits": {
+      "west": "mirkwood_path_2",
+      "north": "mirkwood_deep_thicket",
+      "east": "mirkwood_path_3"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "scenery": [
+      {
+        "name": "stream",
+        "aliases": [
+          "water",
+          "black stream"
+        ],
+        "description": "The stream runs black and sluggish. Best not to touch the water, let alone drink it."
+      }
+    ]
+  },
+  "mirkwood_deep_thicket": {
+    "name": "A Deep Thicket",
+    "description": "Thorny undergrowth tangles between black tree trunks, snagging at cloaks and packs.",
+    "exits": {
+      "south": "enchanted_stream"
+    },
+    "dark": true,
+    "region": "mirkwood"
+  },
+  "mirkwood_path_3": {
+    "name": "A Path Through Mirkwood",
+    "description": "Thick, sticky strands of web cling to branches overhead.",
+    "exits": {
+      "west": "enchanted_stream",
+      "east": "spiders_web_clearing"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "melee_width": 2
+  },
+  "spiders_web_clearing": {
+    "name": "A Web-choked Clearing",
+    "description": "Grey webbing is strung between every tree, thick enough to walk on. Something large moves just out of sight.",
+    "exits": {
+      "west": "mirkwood_path_3",
+      "north": "spiders_nest",
+      "east": "mirkwood_path_4"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "scenery": [
+      {
+        "name": "webs",
+        "aliases": [
+          "webbing"
+        ],
+        "description": "Thick grey webbing, strong enough to walk on if you dared. It leads north, toward something you'd rather not meet."
+      }
+    ],
+    "melee_width": 6
+  },
+  "spiders_nest": {
+    "name": "The Spiders' Nest",
+    "description": "A horrid mass of webbing surrounds bundled, silk-wrapped shapes hanging from the branches.",
+    "exits": {
+      "south": "spiders_web_clearing"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "scenery": [
+      {
+        "name": "shapes",
+        "aliases": [
+          "bundles",
+          "cocoons"
+        ],
+        "description": "Silk-wrapped bundles hang from the branches. You don't look closely enough to tell what -- or who -- is inside."
+      }
+    ]
+  },
+  "mirkwood_path_4": {
+    "name": "A Path Through Mirkwood",
+    "description": "The trees begin to thin very slightly, though the gloom remains thick as ever.",
+    "exits": {
+      "west": "spiders_web_clearing",
+      "east": "elvenking_halls_gate"
+    },
+    "dark": true,
+    "region": "mirkwood",
+    "melee_width": 2
+  },
+  "elvenking_halls_gate": {
+    "name": "The Gate of the Elvenking's Halls",
+    "description": "A great carved doorway in a cliffside, lit by soft lanterns, leads into the Wood-elves' underground halls.",
+    "exits": {
+      "west": "mirkwood_path_4",
+      "north": "elvenking_halls",
+      "down": "elvenking_dungeon",
+      "east": "mirkwood_east_eaves"
+    },
+    "melee_width": 6,
+    "barred_exits": {
+      "east": "The great gate is shut and barred, and elf-guards stand before it. No one walks out of the Elvenking's halls that way."
+    }
+  },
+  "elvenking_halls": {
+    "name": "The Elvenking's Halls",
+    "description": "Torchlit caverns full of carved pillars, feasting tables, and the quiet music of the Wood-elves.",
+    "exits": {
+      "south": "elvenking_halls_gate"
+    },
+    "scenery": [
+      {
+        "name": "pillars",
+        "aliases": [
+          "tables",
+          "music"
+        ],
+        "description": "Carved stone pillars rise into shadow overhead, and somewhere out of sight someone is playing a harp."
+      }
+    ],
+    "melee_width": 6,
+    "items": [
+      "elven_cellar_key"
+    ],
+    "added_description": "The long tables are laden -- roast meats, honey-cakes, bowls of berries and flagons of the king's wine -- and the Wood-elves eat and sing without a care, while your company go hungry at the gate. A guard stands watch at the inner door, and a carved key hangs at his belt."
+  },
+  "elvenking_dungeon": {
+    "name": "The Wood-elves' Dungeon",
+    "description": "A row of cells cut into the rock, currently empty and unwatched.",
+    "exits": {
+      "up": "elvenking_halls_gate",
+      "down": "elvenking_cellars"
+    },
+    "dark": true,
+    "melee_width": 2
+  },
+  "elvenking_cellars": {
+    "name": "The Elvenking's Wine Cellars",
+    "description": "Rows of great empty barrels are stacked here, waiting to be floated downriver.",
+    "exits": {
+      "up": "elvenking_dungeon"
+    },
+    "dark": true,
+    "scenery": [
+      {
+        "name": "barrels",
+        "aliases": [
+          "barrel",
+          "wine barrels",
+          "empty barrels",
+          "cask",
+          "casks"
+        ],
+        "description": "Rows of empty wine barrels, corked and ready to be rolled down to the river and floated to Lake-town. A hobbit -- or a dwarf, at a squeeze -- would fit inside one."
+      },
+      {
+        "name": "trap-door",
+        "aliases": [
+          "trapdoor",
+          "trap door",
+          "hatch",
+          "black water",
+          "water",
+          "river"
+        ],
+        "description": "A trap-door in the floor, and below it black water running fast out under the gate toward the Forest River. It is the only road east the Elvenking does not watch."
+      },
+      {
+        "name": "shelves",
+        "aliases": [
+          "stores",
+          "cordial",
+          "honey-cake",
+          "honey cake",
+          "larder"
+        ],
+        "description": "The Elvenking's stores: pale honey-cakes stacked in rows, and jars of cordial, free to any who reach them."
+      }
+    ],
+    "melee_width": 2,
+    "locked": true,
+    "key_item": "elven_cellar_key",
+    "food_source": true,
+    "staple_food": "elven_cake",
+    "added_description": "Shelves of honey-cake and cordial line the walls -- the Elvenking's stores. A trap-door in the floor opens on black water running out under the gate.",
+    "barrel_route": "mirkwood_east_eaves"
+  },
+  "mirkwood_east_eaves": {
+    "name": "The Eastern Eaves of Mirkwood",
+    "description": "The trees thin at last, and daylight returns as the forest gives way to marshy ground.",
+    "exits": {
+      "west": "elvenking_halls_gate",
+      "east": "forest_river"
+    }
+  },
+  "forest_river": {
+    "name": "The Forest River",
+    "description": "A wide river flows out of Mirkwood toward the Long Lake, dotted with empty barrels drifting on the current.",
+    "exits": {
+      "west": "mirkwood_east_eaves",
+      "east": "lake_shore"
+    },
+    "scenery": [
+      {
+        "name": "barrels",
+        "aliases": [
+          "barrel"
+        ],
+        "description": "Empty wine barrels drift past on the current, on their way down to Lake-town."
+      }
+    ]
+  },
+  "lake_shore": {
+    "name": "The Shore of the Long Lake",
+    "description": "Reeds and mudflats line the edge of a vast lake. Lake-town's rooftops are visible across the water.",
+    "exits": {
+      "west": "forest_river",
+      "east": "lake_town_docks"
+    }
+  },
+  "lake_town_docks": {
+    "name": "The Docks of Lake-town",
+    "description": "A town built entirely on wooden piles above the water, bustling with fishermen and traders.",
+    "exits": {
+      "west": "lake_shore",
+      "north": "lake_town_market",
+      "east": "lake_town_hall"
+    },
+    "melee_width": 6
+  },
+  "lake_town_market": {
+    "name": "Lake-town Market",
+    "description": "Stalls of dried fish, cram-cakes, and warm cloaks line the boardwalk.",
+    "added_description": "A good place to lay in provisions before the last march to the Mountain.",
+    "exits": {
+      "south": "lake_town_docks",
+      "east": "lake_town_tavern"
+    },
+    "items": [
+      "cram",
+      "rope"
+    ],
+    "food_source": true,
+    "scenery": [
+      {
+        "name": "stalls",
+        "aliases": [
+          "cloaks",
+          "fish"
+        ],
+        "description": "Stalls of dried fish and warm cloaks, priced for travellers who look like they need both."
+      }
+    ],
+    "melee_width": 6,
+    "staple_food": "cram"
+  },
+  "lake_town_tavern": {
+    "name": "The Lake-town Tavern",
+    "description": "A rowdy tavern full of fishermen swapping rumors about the dragon on the mountain.",
+    "exits": {
+      "west": "lake_town_market"
+    },
+    "bugfix_note": "Bugfix: this room used to dangle a 'give the black arrow to Bard' hook with no Bard NPC behind it. 'examine fishermen' has the specifics.",
+    "scenery": [
+      {
+        "name": "fishermen",
+        "aliases": [
+          "rumors",
+          "rumours"
+        ],
+        "description": "The fishermen talk of little else but the dragon on the mountain, and argue about whether anything short of a miracle could bring it down.",
+        "bugfix_note": "Bugfix: this used to name-drop Bard and the black arrow as if giving him the arrow would matter -- but no Bard NPC exists in this build, so that was a hint pointing at content that isn't there. Softened to plain color."
+      }
+    ],
+    "melee_width": 6
+  },
+  "lake_town_hall": {
+    "name": "The Master's Hall",
+    "description": "The grand hall of the Master of Lake-town, hung with old tapestries of Dale before the dragon came.",
+    "exits": {
+      "west": "lake_town_docks",
+      "east": "desolation_of_smaug"
+    },
+    "items": [
+      "black_arrow"
+    ],
+    "scenery": [
+      {
+        "name": "tapestries",
+        "aliases": [
+          "tapestry"
+        ],
+        "description": "Faded tapestries show Dale as it was before the dragon came -- bright banners, full granaries, a mountain lit with gold instead of fire."
+      }
+    ],
+    "melee_width": 6
+  },
+  "desolation_of_smaug": {
+    "name": "The Desolation of Smaug",
+    "description": "A blasted, barren waste of ash and scorched stone stretches toward the mountain.",
+    "exits": {
+      "west": "lake_town_hall",
+      "east": "mountain_foot"
+    }
+  },
+  "mountain_foot": {
+    "name": "The Foot of the Lonely Mountain",
+    "description": "The mountain rises sheer above you. A great sealed gate lies to the north; a narrow ledge climbs upward to the west.",
+    "exits": {
+      "west": "desolation_of_smaug",
+      "north": "front_gate",
+      "up": "secret_door_path",
+      "east": "ruins_of_dale"
+    }
+  },
+  "ruins_of_dale": {
+    "name": "The Ruins of Dale",
+    "description": "Broken towers and cracked streets, all that remains of the once-great city of Dale.",
+    "exits": {
+      "west": "mountain_foot",
+      "north": "dale_market"
+    },
+    "scenery": [
+      {
+        "name": "towers",
+        "aliases": [
+          "tower",
+          "streets"
+        ],
+        "description": "Broken towers lean over cracked, weed-grown streets -- Dale was a fine city once, before the dragon came down from the mountain."
+      }
+    ]
+  },
+  "dale_market": {
+    "name": "The Old Market of Dale",
+    "description": "Weeds grow between the flagstones of what was once a busy marketplace.",
+    "exits": {
+      "south": "ruins_of_dale"
+    },
+    "melee_width": 6
+  },
+  "front_gate": {
+    "name": "The Front Gate",
+    "description": "An enormous stone doorway, wide enough for a dragon to pass. It stands ajar, black and silent within.",
+    "exits": {
+      "south": "mountain_foot",
+      "east": "great_hall"
+    },
+    "melee_width": 6
+  },
+  "secret_door_path": {
+    "name": "A Narrow Ledge",
+    "description": "A perilous ledge winds up the mountainside toward a smooth patch of rock.",
+    "exits": {
+      "down": "mountain_foot",
+      "up": "secret_door"
+    },
+    "melee_width": 2
+  },
+  "secret_door": {
+    "name": "The Secret Door",
+    "description": "A smooth grey wall of stone, unremarkable except for a keyhole no bigger than your thumb, faintly outlined by moonlight.",
+    "exits": {
+      "down": "secret_door_path",
+      "east": "side_tunnel"
+    },
+    "locked": true,
+    "key_item": "moon_key",
+    "bugfix_note": "Bugfix: this room itself was permanently unreachable before the same 'open' fix as the Trolls' Cave and Goblin Dungeon (the rooms beyond it were still reachable via the Front Gate, but this specific moon-letters puzzle room was not).",
+    "scenery": [
+      {
+        "name": "keyhole",
+        "aliases": [
+          "moon-letters",
+          "moonlight"
+        ],
+        "description": "A thumb-sized keyhole, picked out faintly by moonlight. Whatever opens it will need to be small, and silver, and found by the same light.",
+        "opened_description": "A thumb-sized keyhole, picked out faintly by moonlight -- and the moon-letter key still standing in it, turned. Small, and silver, and found by the same light that shows the lock it was cut for."
+      }
+    ],
+    "melee_width": 2
+  },
+  "side_tunnel": {
+    "name": "A Secret Tunnel",
+    "description": "A narrow tunnel bored through the mountain's roots, warm air drifting up from somewhere below.",
+    "exits": {
+      "west": "secret_door",
+      "east": "great_hall"
+    },
+    "dark": true,
+    "melee_width": 2
+  },
+  "great_hall": {
+    "name": "The Great Hall Under the Mountain",
+    "description": "Vast dwarven halls, once bright with lamps, now black with soot and dragon-smoke.",
+    "exits": {
+      "west": "side_tunnel",
+      "south": "front_gate",
+      "down": "treasure_chamber"
+    },
+    "dark": true,
+    "scenery": [
+      {
+        "name": "lamps",
+        "aliases": [
+          "soot"
+        ],
+        "description": "Great dwarven lamps line the walls, long cold and blackened with soot."
+      }
+    ],
+    "melee_width": 6
+  },
+  "treasure_chamber": {
+    "name": "Smaug's Lair",
+    "description": "A cavern of gold beyond imagining, mounded higher than a house.",
+    "exits": {
+      "up": "great_hall"
+    },
+    "items": [
+      "arkenstone",
+      "gold_goblet",
+      "treasure_hoard",
+      "mithril_coat"
+    ],
+    "dark": true,
+    "melee_width": 6
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "troll_tom": {
+    "name": "Tom the troll",
+    "aliases": [
+      "tom",
+      "troll"
+    ],
+    "start_location": "trolls_clearing",
+    "health": 34,
+    "attack": 6,
+    "dialogue": "Grr, what's this then, a little morsel come to visit?",
+    "region": "trollshaws",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true,
+    "loot": [
+      "key_troll_cave"
+    ]
+  },
+  "troll_bert": {
+    "name": "Bert the troll",
+    "aliases": [
+      "bert",
+      "troll"
+    ],
+    "start_location": "trolls_clearing",
+    "health": 34,
+    "attack": 6,
+    "dialogue": "Never you mind who we are, just climb in the sack.",
+    "region": "trollshaws",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  },
+  "troll_william": {
+    "name": "William the troll",
+    "aliases": [
+      "william",
+      "bill",
+      "troll"
+    ],
+    "start_location": "trolls_clearing",
+    "health": 34,
+    "attack": 6,
+    "dialogue": "Mutton yesterday, mutton today, and mutton again tomorrow if this go on.",
+    "region": "trollshaws",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  },
+  "goblin_scout": {
+    "name": "goblin scout",
+    "aliases": [
+      "goblin",
+      "scout"
+    ],
+    "start_location": "goblin_tunnel_1",
+    "health": 16,
+    "attack": 4,
+    "dialogue": "Hssss! Fresh meat wandering in the dark!",
+    "region": "goblin",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  },
+  "goblin_captain": {
+    "name": "the Great Goblin",
+    "aliases": [
+      "great goblin",
+      "goblin captain",
+      "goblin king"
+    ],
+    "start_location": "goblin_throne_room",
+    "health": 75,
+    "attack": 9,
+    "dialogue": "Who are these miserable persons?! Bring them before me!",
+    "region": "goblin",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true,
+    "loot": [
+      "key_goblin_cell"
+    ]
+  },
+  "giant_spider": {
+    "name": "giant spider",
+    "aliases": [
+      "spider"
+    ],
+    "start_location": "spiders_nest",
+    "health": 26,
+    "attack": 5,
+    "dialogue": "(The spider hisses and clicks its mandibles.)",
+    "region": "mirkwood",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  },
+  "warg": {
+    "name": "warg",
+    "aliases": [
+      "wolf"
+    ],
+    "start_location": "misty_foothills",
+    "health": 22,
+    "attack": 5,
+    "dialogue": "(The warg snarls, hackles raised.)",
+    "region": "misty_mountains",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  },
+  "smaug": {
+    "name": "Smaug",
+    "aliases": [
+      "the dragon",
+      "dragon"
+    ],
+    "start_location": "treasure_chamber",
+    "health": 150,
+    "attack": 17,
+    "dialogue": "Well, thief! I smell you and I feel your air. I hear your breath. Come along, don't be shy!",
+    "region": "lonely_mountain",
+    "is_monster": true,
+    "aggressive": true,
+    "stationary": true
+  }
+}

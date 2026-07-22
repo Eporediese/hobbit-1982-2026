@@ -1,0 +1,261 @@
+{
+  "walking_stick": {
+    "name": "walking stick",
+    "aliases": [
+      "stick",
+      "staff"
+    ],
+    "description": "A sturdy wooden walking stick -- it eases a long march, and at a pinch it's a better cudgel than bare fists.",
+    "type": "weapon",
+    "damage": 4,
+    "walking_aid": true,
+    "weight": 2
+  },
+  "thorin_map": {
+    "name": "old map",
+    "aliases": [
+      "map",
+      "wilderland map",
+      "thorin's map",
+      "thorins map"
+    ],
+    "description": "A well-worn map of the Wilderland, marking the road east to the Lonely Mountain. A note in the corner mentions moon-letters on the back, readable only by the same moon and season under which they were written -- you'd need to find somewhere suitably moonlit to make them out.",
+    "type": "misc",
+    "weight": 1,
+    "added": true,
+    "bugfix_note": "Bugfix: Bag End's description used to mention a map hanging by the door, but there was no actual item there -- examining or taking it did nothing. It's now a real, carryable, examinable item."
+  },
+  "torch": {
+    "name": "torch",
+    "aliases": [
+      "light",
+      "brand"
+    ],
+    "description": "An unlit torch. Light it before venturing into the dark.",
+    "type": "light",
+    "light_turns": 40,
+    "weight": 2
+  },
+  "sting": {
+    "name": "Sting",
+    "aliases": [
+      "sword",
+      "short sword",
+      "elvish blade"
+    ],
+    "description": "A small elvish blade that glows blue when goblins or orcs are near.",
+    "type": "weapon",
+    "damage": 7,
+    "weight": 3,
+    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself)."
+  },
+  "orcrist": {
+    "name": "Orcrist",
+    "aliases": [
+      "goblin cleaver"
+    ],
+    "description": "Thorin's ancient elvish blade, known to goblins as 'Biter'.",
+    "type": "weapon",
+    "damage": 8,
+    "weight": 5
+  },
+  "glamdring": {
+    "name": "Glamdring",
+    "aliases": [
+      "foe hammer"
+    ],
+    "description": "Gandalf's sword, known to goblins as 'Beater'.",
+    "type": "weapon",
+    "damage": 8,
+    "weight": 5
+  },
+  "ring": {
+    "name": "plain gold ring",
+    "aliases": [
+      "gold ring",
+      "the ring"
+    ],
+    "description": "A small, plain gold ring. It feels strangely warm.",
+    "type": "treasure",
+    "wearable": true,
+    "weight": 0,
+    "value": 400
+  },
+  "key_troll_cave": {
+    "name": "iron key",
+    "aliases": [
+      "troll key"
+    ],
+    "description": "A large rusty iron key taken from a troll.",
+    "type": "key",
+    "opens": "troll_cave",
+    "weight": 1
+  },
+  "key_goblin_cell": {
+    "name": "goblin cell key",
+    "aliases": [
+      "cell key",
+      "rusty key"
+    ],
+    "description": "A crude iron key stripped from the goblin captain.",
+    "type": "key",
+    "opens": "goblin_dungeon",
+    "weight": 1
+  },
+  "moon_key": {
+    "name": "moon-letter key",
+    "aliases": [
+      "silver key",
+      "durin's key"
+    ],
+    "description": "A slim silver key, its grip etched with moon-letters only visible by moonlight.",
+    "type": "key",
+    "opens": "secret_door",
+    "weight": 1
+  },
+  "bread": {
+    "name": "loaf of bread",
+    "aliases": [
+      "loaf",
+      "food"
+    ],
+    "description": "A fresh loaf of Shire bread.",
+    "type": "food",
+    "food_value": 30,
+    "weight": 1
+  },
+  "elvish_bread": {
+    "name": "waybread",
+    "aliases": [
+      "lembas",
+      "elf bread"
+    ],
+    "description": "Rivendell's waybread -- one cake sustains a traveller through a long day's march, and it keeps for months in the pack.",
+    "type": "food",
+    "food_value": 70,
+    "weight": 1
+  },
+  "cram": {
+    "name": "cake of cram",
+    "aliases": [
+      "cram cake"
+    ],
+    "description": "A dry, filling traveller's cake favored by the Lake-men. Not very tasty.",
+    "type": "food",
+    "food_value": 40,
+    "weight": 1
+  },
+  "mutton": {
+    "name": "leg of mutton",
+    "aliases": [
+      "meat"
+    ],
+    "description": "A roasted leg of mutton.",
+    "type": "food",
+    "food_value": 40,
+    "weight": 2,
+    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself)."
+  },
+  "gold_coins_small": {
+    "name": "small pile of gold coins",
+    "aliases": [
+      "coins",
+      "gold"
+    ],
+    "description": "A modest pile of gold coins, plunder from the trolls' hoard.",
+    "type": "treasure",
+    "weight": 6,
+    "bugfix_note": "Bugfix: this lived in the Trolls' Cave, which was permanently unreachable until 'open' was fixed to unlock the room a door actually leads to (see the cave itself).",
+    "value": 60
+  },
+  "rope": {
+    "name": "coil of rope",
+    "aliases": [
+      "coil"
+    ],
+    "description": "A sturdy coil of rope, useful for climbing.",
+    "type": "tool",
+    "weight": 3
+  },
+  "black_arrow": {
+    "name": "black arrow",
+    "aliases": [
+      "arrow"
+    ],
+    "description": "A huge black arrow, passed down through generations of Bard's family.",
+    "type": "tool",
+    "weight": 1
+  },
+  "arkenstone": {
+    "name": "the Arkenstone",
+    "aliases": [
+      "heart of the mountain"
+    ],
+    "description": "A great white gem that shines with its own inner light -- the Heart of the Mountain.",
+    "type": "treasure",
+    "weight": 1,
+    "value": 1000
+  },
+  "gold_goblet": {
+    "name": "golden goblet",
+    "aliases": [
+      "goblet",
+      "cup"
+    ],
+    "description": "An ornate golden goblet from the dwarves' ancient hoard.",
+    "type": "treasure",
+    "weight": 2,
+    "value": 120
+  },
+  "treasure_hoard": {
+    "name": "heap of treasure",
+    "aliases": [
+      "treasure",
+      "hoard",
+      "gold hoard"
+    ],
+    "description": "A vast heap of gold, gems, and ancient dwarven armor -- Smaug's stolen hoard.",
+    "type": "treasure",
+    "weight": 14,
+    "value": 900
+  },
+  "mithril_coat": {
+    "name": "mithril coat",
+    "aliases": [
+      "mithril shirt",
+      "silver mail"
+    ],
+    "description": "A shirt of mail, its rings wrought of true-silver -- mithril -- light as a feather and hard as dragon scales.",
+    "type": "misc",
+    "wearable": true,
+    "weight": 2,
+    "value": 250
+  },
+  "elven_cake": {
+    "name": "elven cake",
+    "aliases": [
+      "cake",
+      "cakes",
+      "elf cake",
+      "honey cake"
+    ],
+    "description": "A pale honey-cake of the Wood-elves, light as a leaf and sweeter than anything that ever came out of a hobbit's oven.",
+    "type": "food",
+    "food_value": 55,
+    "weight": 1,
+    "added": true
+  },
+  "elven_cellar_key": {
+    "name": "carved elven key",
+    "aliases": [
+      "elven key",
+      "cellar key",
+      "carved key"
+    ],
+    "description": "A slender key of white wood, carved with leaves. The butler of the Elvenking keeps its like on his belt -- this one opens the wine cellars.",
+    "type": "key",
+    "opens": "elvenking_cellars",
+    "weight": 1,
+    "added": true
+  }
+}
