@@ -138,16 +138,19 @@ which was itself remarkable for 1982, just undirected.
 
 ### What it costs
 
-Measured, not estimated -- the guess this replaced was thirty times too high.
+Measured against a live model, which is the only way this came out right.
 
-The model is consulted far less often than it looks: budgets allow one goal
-call and one flavour call per turn, and goals are only reconsidered every
-twelfth turn. Over a 500-turn run with a talkative player that is **30 calls,
-or 0.06 per turn** -- most turns ask the model nothing at all.
+A real game asks the model something on **about one turn in one** -- roughly
+one call per turn, counted over a 130-turn run with fights, remarks and
+narration in it. At the rates a reseller charges for Sonnet that puts a full
+playthrough somewhere around **fifty pence to a pound**, so a family of five
+playing through twice is a few pounds rather than a few pence.
 
-At list rates that puts a full playthrough at about **three cents** on Sonnet,
-or under two on Haiku. A family of five playing through twice costs well under
-a pound. Cost is not a reason to choose one model over another here.
+An earlier version of this section claimed three pence, from a stub run that
+mostly waited in empty rooms where almost nothing fires. It was wrong by more
+than an order of magnitude. If you want your own number rather than this one,
+`tools/soak.py --ai` and a counter on the client will give it to you in ten
+minutes.
 
 One good model for everything is therefore the default and the recommendation.
 
