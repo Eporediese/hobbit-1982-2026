@@ -111,14 +111,47 @@ $("#nameform").onsubmit = e => {
   play();
 };
 
+// Command history: Up/Down walk through past commands, the way the terminal
+// did. `pos` is where we are in the list (== length means "not browsing"),
+// and `draft` holds the half-typed line so stepping back and forward returns
+// it. Newest command is last.
+let history = [];
+let pos = 0, draft = "";
+
 $("#turn").onsubmit = async e => {
   e.preventDefault();
   const text = $("#cmd").value.trim();
   if (!text) return;
+  if (history[history.length - 1] !== text) history.push(text);
+  if (history.length > 100) history.shift();
+  pos = history.length;
+  draft = "";
   $("#cmd").value = "";
   const data = await send("/api/command", {name, text});
   show(data.lines);
 };
+
+$("#cmd").addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") {
+    if (!history.length) return;
+    if (pos === history.length) draft = $("#cmd").value;   // remember the draft
+    pos = Math.max(0, pos - 1);
+    e.preventDefault();
+    setInput(history[pos]);
+  } else if (e.key === "ArrowDown") {
+    if (pos === history.length) return;
+    pos = Math.min(history.length, pos + 1);
+    e.preventDefault();
+    setInput(pos === history.length ? draft : history[pos]);
+  }
+});
+
+function setInput(value) {
+  const el = $("#cmd");
+  el.value = value;
+  // Put the caret at the end, as a shell does when you recall a line.
+  requestAnimationFrame(() => el.setSelectionRange(value.length, value.length));
+}
 
 function begin() {
   if (!name) { only("namepanel"); $("#nameinput").focus(); return; }
