@@ -136,6 +136,23 @@ missing, or crashing model never breaks the game. In purist mode the whole AI
 layer is off and the characters revert to the original's own wandering --
 which was itself remarkable for 1982, just undirected.
 
+### What it costs
+
+Measured, not estimated -- the guess this replaced was thirty times too high.
+
+The model is consulted far less often than it looks: budgets allow one goal
+call and one flavour call per turn, and goals are only reconsidered every
+twelfth turn. Over a 500-turn run with a talkative player that is **30 calls,
+or 0.06 per turn** -- most turns ask the model nothing at all.
+
+At list rates that puts a full playthrough at about **three cents** on Sonnet,
+or under two on Haiku. A family of five playing through twice costs well under
+a pound. Cost is not a reason to choose one model over another here.
+
+Speed is. Goal picks sit on the turn path, where somebody is waiting for the
+room to appear, so `HOBBIT_LLM_FAST_MODEL` points those at a quicker model
+while dialogue -- the only text a player reads -- stays with the better one.
+
 Needs a reachable [Ollama](https://ollama.com) server (or any compatible
 endpoint via `--ollama-url`). An 8B model keeps replies at ~2-3s once warm;
 14B models are noticeably slower. The model is warmed up at startup and kept
