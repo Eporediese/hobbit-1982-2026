@@ -1740,6 +1740,24 @@ class Game:
                 loc.graves = list(dict.fromkeys(loc.graves))
             self._buried.update(loc.graves)
 
+        # A companion who fell while foes still stood went onto a pending-burial
+        # queue that lived only in memory. A save and reload before the fight
+        # ended -- every deploy restarts the server, and idle sessions are
+        # dropped -- left them dead but forever unburied, with no cairn. Re-derive
+        # the burial from what IS saved: who is dead, and where they fell. The
+        # next clear turn raises the cairn, just as if the fight had only ended.
+        if not self.authentic:
+            name_to_id = {loc.name: loc.id
+                          for loc in self.world.locations.values()}
+            waiting = {name for _, name in self._pending_burials}
+            for char in self.characters.values():
+                if (isinstance(char, NPC) and char.def_.is_party
+                        and not char.alive and char.name not in self._buried
+                        and char.name not in waiting
+                        and char.death_place in name_to_id):
+                    self._pending_burials.append(
+                        (name_to_id[char.death_place], char.name))
+
         # Characters know where they stand; make sure the rooms agree. This
         # also repairs any desync, not just newly added folk.
         for char in self.characters.values():

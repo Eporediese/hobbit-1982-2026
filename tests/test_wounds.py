@@ -116,6 +116,36 @@ def test_fallen_companion_is_buried_once_the_battle_is_won():
     assert any("cairn" in m.lower() for m in msgs)
 
 
+def test_a_burial_pending_across_a_reload_is_not_lost(tmp_path):
+    """A companion who fell while foes still stood was queued for burial only in
+    memory. A save + reload before the fight ended (every deploy restarts the
+    server) used to leave them dead but never given a cairn. reconcile_after_load
+    re-derives the burial from who is dead and where they fell."""
+    game = Game(seed=1)
+    game.player.location_id = "trolls_clearing"
+    for cid in ("balin", "oin", "dwalin"):        # gather them at the clearing
+        game.world.get("bag_end").npcs.remove(cid)
+        game.characters[cid].location_id = "trolls_clearing"
+        game.world.get("trolls_clearing").npcs.append(cid)
+    dwalin = game.characters["dwalin"]
+    dwalin.alive = False
+    game.handle_death(dwalin)                     # trolls alive -> burial pending
+    assert game._pending_burials                  # queued, but only in memory
+
+    save = tmp_path / "s.json"
+    game.save(save)                               # ...and the queue is not saved
+    reloaded = Game(seed=1)
+    reloaded.load(save)
+    reloaded.reconcile_after_load()
+    assert any(name == "Dwalin" for _, name in reloaded._pending_burials)
+
+    # clear the foes; the cairn is raised, just as if the fight had only ended
+    for tid in ("troll_tom", "troll_bert", "troll_william"):
+        reloaded.characters[tid].alive = False
+    reloaded._advance_world_turn()
+    assert "Dwalin" in reloaded.world.get("trolls_clearing").graves
+
+
 def test_battle_marks_survive_save_load(tmp_path):
     save = tmp_path / "s.json"
     game = Game(seed=1)
