@@ -243,17 +243,35 @@ def test_quit_and_exit_guide_rather_than_stranding(server):
         assert not data["over"]          # the game is not over, just idling
 
 
-def test_load_and_save_explain_the_automatic_journey(server):
-    """The terminal game's save/load have no meaning here -- every turn is
-    written automatically. do_load only set a flag the web loop never reads, so
-    a player who typed 'load' (after 'restart', hoping to get their game back)
-    got a blank reply."""
-    for word in ("load", "save", "restore"):
-        data = _post(server, "/api/command", {"name": "keeper", "text": word})
-        joined = " ".join(data["lines"])
-        assert f"&gt; {word}" in joined          # the command is echoed
-        assert "saves itself" in joined          # ...and answered, not ignored
-        assert not data["over"]
+def test_a_manual_save_can_be_loaded_back_after_death(server):
+    """The whole point of save/load on the web: come back to a chosen point
+    even after the worst -- so death isn't 'start the journey over'."""
+    _post(server, "/api/command", {"name": "keeper", "text": "look"})
+    # nothing saved yet
+    miss = _post(server, "/api/command", {"name": "keeper", "text": "load"})
+    assert any("nothing saved" in ln.lower() for ln in miss["lines"])
+    # save a point, then move on
+    saved = _post(server, "/api/command", {"name": "keeper", "text": "save"})
+    assert any("saved" in ln.lower() for ln in saved["lines"])
+    _post(server, "/api/command", {"name": "keeper", "text": "east"})
+    # load returns to the saved room (Bag End), not where we walked to
+    back = _post(server, "/api/command", {"name": "keeper", "text": "load"})
+    joined = " ".join(back["lines"])
+    assert "return to your saved point" in joined.lower()
+    assert "Bag End" in joined
+
+
+def test_the_two_editions_are_separate_games_for_one_name(server):
+    """A person can hold a journey in each edition at once -- picking '1982'
+    must not resume or clobber their enhanced game."""
+    _post(server, "/api/command",
+          {"name": "twin", "text": "east", "edition": "enhanced"})
+    # the 1982 edition for the same name is a fresh, separate journey
+    state = _get(server, "/api/state?name=twin&edition=1982")
+    assert state["new"] is True
+    # and the enhanced one is still there where we left it
+    enh = _get(server, "/api/state?name=twin&edition=enhanced")
+    assert enh["new"] is False
 
 
 def test_restart_shows_the_opening_room(server):
@@ -273,30 +291,31 @@ def test_a_new_player_is_flagged_new_without_a_game_being_made(server, tmp_path)
     assert state["lines"] == []
 
 
-def test_choosing_purist_starts_a_purist_game(server):
-    data = _post(server, "/api/command",
-                 {"name": "purist_pat", "text": "look", "mode": "purist"})
+def test_choosing_the_1982_edition_starts_a_purist_game(server):
+    _post(server, "/api/command",
+          {"name": "purist_pat", "text": "look", "edition": "1982"})
     # the map is wall-flavour in purist -- 'examine map' finds nothing
-    m = _post(server, "/api/command", {"name": "purist_pat", "text": "examine map"})
+    m = _post(server, "/api/command",
+              {"name": "purist_pat", "text": "examine map", "edition": "1982"})
     assert any("no map" in line.lower() for line in m["lines"])
     assert not any("added" in line for line in m["lines"])   # no cyan additions
 
 
-def test_the_default_choice_is_the_enhanced_game(server):
+def test_the_default_edition_is_the_enhanced_game(server):
     _post(server, "/api/command",
-          {"name": "enh", "text": "look", "mode": "enhanced"})
+          {"name": "enh", "text": "look", "edition": "enhanced"})
     m = _post(server, "/api/command", {"name": "enh", "text": "examine map"})
     assert any("moon-letters" in line.lower() for line in m["lines"])
 
 
-def test_mode_is_fixed_after_the_game_exists(server):
-    """A returning player keeps their tale -- a later mode hint is ignored."""
-    _post(server, "/api/command",
-          {"name": "steady", "text": "look", "mode": "purist"})
-    # a subsequent command claiming 'enhanced' must not flip an existing game
-    _post(server, "/api/command",
-          {"name": "steady", "text": "look", "mode": "enhanced"})
-    m = _post(server, "/api/command", {"name": "steady", "text": "examine map"})
+def test_an_editions_game_keeps_its_mode_across_turns(server):
+    """The 1982 game stays 1982 -- its mode rides on the edition, so later
+    turns can't flip it."""
+    for _ in range(2):
+        _post(server, "/api/command",
+              {"name": "steady", "text": "look", "edition": "1982"})
+    m = _post(server, "/api/command",
+              {"name": "steady", "text": "examine map", "edition": "1982"})
     assert any("no map" in line.lower() for line in m["lines"])   # still purist
 
 

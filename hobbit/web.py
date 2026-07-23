@@ -147,6 +147,18 @@ class Handler(BaseHTTPRequestHandler):
     def _player(self, data: dict) -> str | None:
         return normalise_name(str(data.get("name", "")))
 
+    @staticmethod
+    def _storage_key(player: str, edition_raw: str) -> tuple[str, str, bool]:
+        """(edition, storage key, authentic) for a player + chosen edition.
+
+        The two editions are separate games: one person can hold a journey in
+        each without collision. The enhanced game keeps the plain name as its
+        key, so saves made before the editions were split still load; the 1982
+        edition is namespaced."""
+        edition = "1982" if edition_raw == "1982" else "enhanced"
+        key = player if edition == "enhanced" else f"1982-{player}"
+        return edition, key, edition == "1982"
+
     # -- routes ---------------------------------------------------------
 
     def do_GET(self) -> None:
@@ -161,18 +173,19 @@ class Handler(BaseHTTPRequestHandler):
             if not self.gate.allows(self._token()):
                 return self._json(401, {"error": "locked"})
             query = parse_qs(urlparse(self.path).query)
-            name = normalise_name((query.get("name") or [""])[0])
-            if not name:
+            player = normalise_name((query.get("name") or [""])[0])
+            if not player:
                 return self._json(400, {"error": "bad name"})
-            # Don't create the game here: a brand-new player is offered the
-            # choice of mode first, and get() would create it in the default
-            # mode before they could choose. So report existence, and only
-            # touch the session when there is already one.
-            if not self.store.has(name):
-                return self._json(200, {"name": name, "new": True, "lines": []})
-            session = self.store.get(name)
+            _, key, _ = self._storage_key(player, (query.get("edition") or [""])[0])
+            # Don't create the game here: report whether this edition's game
+            # already exists, and only touch the session when it does. (get()
+            # would create it eagerly, before the player could be offered a
+            # fresh start.)
+            if not self.store.has(key):
+                return self._json(200, {"name": player, "new": True, "lines": []})
+            session = self.store.get(key)
             return self._json(200, {
-                "name": name,
+                "name": player,
                 "new": False,
                 "lines": session.transcript,
                 "over": session.game.won or session.game.lost,
@@ -198,22 +211,26 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(401, {"error": "locked"})
 
         if path == "/api/command":
-            name = self._player(data)
-            if not name:
+            player = self._player(data)
+            if not player:
                 return self._json(400, {"error":
                                         "A name, please -- letters and spaces."})
             text = str(data.get("text", ""))[:200]
             word = text.strip().lower()
-            # The chosen mode only matters when this player's game is created
-            # here for the first time; get() ignores it for a game that already
-            # exists, so a returning player is unaffected.
-            authentic = True if data.get("mode") == "purist" else None
-            session = self.store.get(name, authentic=authentic)
+            # Which edition (and so which of this player's two games, and its
+            # mode). The edition only decides the mode when the game is first
+            # created; a returning game keeps whatever it began as.
+            edition, key, authentic = self._storage_key(
+                player, str(data.get("edition", "")))
+            session = self.store.get(key, authentic=(True if authentic else None))
             game = session.game
+            echo = f'<span class="echo">&gt; {html.escape(text)}</span>'
+            reset = False  # a restart sends the player back to the front door
 
             if word in ("restart", "start again", "begin again", "new game"):
-                session = self.store.restart(name)
+                session = self.store.restart(key)
                 game = session.game
+                reset = True
                 lines = [to_html("You set out again from the beginning."),
                          ""]
                 lines += render(game.describe_location(game.player),
@@ -222,28 +239,35 @@ class Handler(BaseHTTPRequestHandler):
                 # There is no process to quit in a browser, and "Farewell!"
                 # left the player stranded -- one of them typed 'exit' hoping
                 # to start over. Say what actually works here.
-                lines = [f'<span class="echo">&gt; {html.escape(text)}</span>',
+                lines = [echo,
                          to_html("There's no need to leave -- close the tab "
                                  "whenever you like and your journey waits for "
                                  "you. To begin again from Bag End, type "
-                                 "'restart'.")]
-            elif word in ("save", "load", "restore"):
-                # These belong to the terminal game, which has a save file and a
-                # host loop to load it. Here every turn is written to the
-                # player's own save automatically -- do_load would just set a
-                # flag nothing reads, leaving the player staring at a blank
-                # reply (as one did after 'restart' + 'load'). Say what's true.
-                lines = [f'<span class="echo">&gt; {html.escape(text)}</span>',
-                         to_html("Your journey saves itself after every turn -- "
-                                 "there's nothing to save or load by hand. Close "
-                                 "the tab whenever you like and you'll pick up "
-                                 "right where you left off. To start over from "
-                                 "Bag End, type 'restart'.")]
+                                 "'restart', or choose 'editions' above to step "
+                                 "back to the front door.")]
+            elif word == "save":
+                ok = self.store.save_checkpoint(key)
+                lines = [echo, to_html(
+                    "Saved. If it comes to the worst, type 'load' to return to "
+                    "this very point." if ok else
+                    "There's nothing to save just yet.")]
+            elif word in ("load", "restore"):
+                # The point of a manual save: come back to it, even from death.
+                if self.store.load_checkpoint(key):
+                    game = session.game
+                    lines = [echo, to_html("You return to your saved point."), ""]
+                    lines += render(game.describe_location(game.player),
+                                    game.annotation_level)
+                else:
+                    lines = [echo, to_html(
+                        "You have nothing saved to return to. Type 'save' at a "
+                        "safe moment to set a point you can come back to.")]
             elif game.won or game.lost:
-                lines = [to_html("The journey is over. Type 'restart' to "
-                                 "begin again.")]
+                lines = [echo, to_html(
+                    "The journey is over. Type 'load' to return to your last "
+                    "save, or 'restart' to begin again from Bag End.")]
             else:
-                lines = [f'<span class="echo">&gt; {html.escape(text)}</span>']
+                lines = [echo]
                 lines += render(game.process_player_input(text),
                                 game.annotation_level)
                 if game.won:
@@ -251,12 +275,15 @@ class Handler(BaseHTTPRequestHandler):
                     lines.append(to_html("*** THE END ***"))
                 elif game.lost:
                     lines.append(to_html(game.lose_reason or "You have died."))
-                    lines.append(to_html("*** GAME OVER ***"))
+                    lines.append(to_html("You have died. Type 'load' to return "
+                                         "to your last save, or 'restart' to "
+                                         "begin again from Bag End."))
             self.store.record(session, lines)
-            self.store.save(name)      # every turn: a closed tab loses nothing
+            self.store.save(key)      # every turn: a closed tab loses nothing
             return self._json(200, {
                 "lines": lines,
                 "over": game.won or game.lost,
+                "reset": reset,
             })
 
         return self._json(404, {"error": "no such thing"})

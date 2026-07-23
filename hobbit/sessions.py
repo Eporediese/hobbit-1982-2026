@@ -179,6 +179,39 @@ class SessionStore:
             self._transcript_path(name).write_text(
                 json.dumps(session.transcript), encoding="utf-8")
 
+    # -- manual checkpoints (a bookmark you can return to) --------------
+    #
+    # Separate from the per-turn save above, which faithfully records wherever
+    # you are -- including your death. A checkpoint is a point the player chose,
+    # so `load` can bring them back to it after a bad end. It deliberately
+    # survives `restart`, so even a fresh start can be undone.
+
+    def _checkpoint_path(self, name: str) -> Path:
+        return self.directory / f"{name}.checkpoint.json"
+
+    def save_checkpoint(self, name: str) -> bool:
+        with self._lock:
+            session = self._sessions.get(name)
+            if session is None:
+                return False
+            save_game(session.game, self._checkpoint_path(name))
+            return True
+
+    def load_checkpoint(self, name: str) -> bool:
+        """Restore the player's checkpoint into their live game, in place.
+        False if there is nothing saved, or the file is unreadable."""
+        with self._lock:
+            session = self._sessions.get(name)
+            path = self._checkpoint_path(name)
+            if session is None or not path.exists():
+                return False
+            try:
+                load_game(session.game, path)
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                return False
+            session.game.reconcile_after_load()
+            return True
+
     def restart(self, name: str) -> Session:
         """Begin the journey again, keeping the old save as a record.
 
@@ -234,5 +267,6 @@ class SessionStore:
         with self._lock:
             on_disk = {p.stem for p in self.directory.glob("*.json")
                        if not p.name.endswith((".corrupt.json", ".bak",
-                                               ".transcript.json"))}
+                                               ".transcript.json",
+                                               ".checkpoint.json"))}
             return sorted(on_disk | set(self._sessions))

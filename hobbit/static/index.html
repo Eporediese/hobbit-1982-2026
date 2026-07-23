@@ -11,6 +11,8 @@
   header { padding:.6rem 1rem; border-bottom:1px solid #2b2620; color:var(--dim);
            display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap }
   header b { color:var(--fg); font-weight:600 }
+  header a { margin-left:auto; color:var(--dim); text-decoration:none; font-size:.85rem }
+  header a:hover, header a:focus { color:var(--accent); outline:none }
   #scroll { flex:1; overflow-y:auto; padding:1rem; white-space:pre-wrap;
             overflow-wrap:anywhere }
   #scroll div { min-height:1.55em }
@@ -64,28 +66,30 @@
   <p class="err" id="nameerr"></p>
 </div>
 
-<!-- Which game (new players only) -->
-<div class="panel" id="modepanel" hidden>
+<!-- The front door: which of the two editions -->
+<div class="panel" id="frontdoor" hidden>
   <h1>The Hobbit</h1>
-  <p>Which tale will you play? This is chosen once and holds for the whole
-     journey.</p>
+  <p>Two editions, forty-four years apart. Which will you play?</p>
   <div class="choices">
-    <button class="choice" data-mode="enhanced">
+    <button class="choice" data-edition="enhanced">
       <b>The Enhanced Game</b>
       <span>The recreation: a world that moves while you're away, companions
             with a voice, the puzzles made winnable. Recommended.</span>
     </button>
-    <button class="choice" data-mode="purist">
-      <b>The Purist Game</b>
-      <span>1982 as it shipped — reverted prose, the original's quirky locks
-            (some rooms unreachable), the hunger death-spiral. Faithful, and
-            not always winnable. For the curious.</span>
+    <button class="choice" data-edition="1982">
+      <b>The 1982 Edition</b>
+      <span>The original as it shipped — reverted prose, the quirky locks (some
+            rooms unreachable), the hunger death-spiral. Faithful, and not
+            always winnable.</span>
     </button>
   </div>
 </div>
 
 <!-- The game -->
-<header hidden id="bar"><b>The Hobbit</b><span id="who"></span></header>
+<header hidden id="bar">
+  <b>The Hobbit</b><span id="who"></span>
+  <a href="#" id="tofront" title="Back to the front door">⌂ editions</a>
+</header>
 <div id="scroll" hidden></div>
 <form id="turn" hidden>
   <input id="cmd" placeholder="What do you do?" autocomplete="off">
@@ -143,13 +147,14 @@
 <script>
 const $ = s => document.querySelector(s);
 let name = localStorage.getItem("hobbit-name") || "";
+let edition = localStorage.getItem("hobbit-edition") || "";
 
 // Paint the then/now banner onto the landing screens. The template's clipPath
 // id has to be made unique in each copy, or the second copy would reference the
 // first's clip.
 (function paintBanner() {
   const tpl = document.getElementById("banner-art");
-  document.querySelectorAll("#gate, #namepanel").forEach((panel, i) => {
+  document.querySelectorAll("#gate, #frontdoor, #namepanel").forEach((panel, i) => {
     const frag = tpl.content.cloneNode(true);
     const clip = frag.querySelector("clipPath");
     const clipped = frag.querySelector("[clip-path]");
@@ -159,7 +164,7 @@ let name = localStorage.getItem("hobbit-name") || "";
 })();
 
 function only(id) {
-  for (const el of ["gate", "namepanel", "modepanel", "bar", "scroll", "turn"])
+  for (const el of ["gate", "frontdoor", "namepanel", "bar", "scroll", "turn"])
     $("#" + el).hidden = true;
   if (id === "game") { $("#bar").hidden = $("#scroll").hidden = $("#turn").hidden = false; }
   else $("#" + id).hidden = false;
@@ -205,11 +210,19 @@ $("#nameform").onsubmit = e => {
   begin();
 };
 
-// New players choose which tale before the game exists; a returning player
-// keeps whichever they began with.
-for (const b of document.querySelectorAll(".choice")) {
-  b.onclick = () => play(b.dataset.mode);
+// The front door: choose an edition, then on into the game (or the name
+// screen, if we don't know you yet). The two editions are separate journeys.
+for (const b of document.querySelectorAll("#frontdoor .choice")) {
+  b.onclick = () => {
+    edition = b.dataset.edition;
+    localStorage.setItem("hobbit-edition", edition);
+    begin();
+  };
 }
+
+// The way back out: the header link returns to the front door to switch
+// editions, without disturbing either game.
+$("#tofront").onclick = e => { e.preventDefault(); only("frontdoor"); };
 
 // Command history: Up/Down walk through past commands, the way the terminal
 // did. `pos` is where we are in the list (== length means "not browsing"),
@@ -237,8 +250,10 @@ $("#turn").onsubmit = async e => {
   const pending = pendingLine();
   setBusy(true);
   try {
-    const data = await send("/api/command", {name, text});
+    const data = await send("/api/command", {name, text, edition});
     pending.remove();
+    // 'restart' backs out to the front door rather than dropping you back in.
+    if (data.reset) { only("frontdoor"); return; }
     // The server echoes the command too; we already have, so drop its copy.
     show((data.lines || []).filter(l => !l.startsWith('<span class="echo"')));
   } catch (err) {
@@ -294,20 +309,26 @@ function setInput(value) {
 }
 
 async function begin() {
+  // Front door first: the edition is chosen before anything else. Then a name,
+  // then that edition's game -- resumed if it exists, started fresh if not.
+  if (!edition) { only("frontdoor"); return; }
   if (!name) { only("namepanel"); $("#nameinput").focus(); return; }
-  // A returning player drops straight in; a new one is offered the choice of
-  // tale first.
-  const state = await api("/api/state?name=" + encodeURIComponent(name));
-  if (state.new) { only("modepanel"); return; }
+  const q = "name=" + encodeURIComponent(name) + "&edition=" + encodeURIComponent(edition);
+  const state = await api("/api/state?" + q);
+  if (state.new) { play(); return; }
   resume(state);
 }
 
-// A new game: mode is set on the first command that creates it.
-async function play(mode) {
+function editionLabel() {
+  return edition === "1982" ? "the 1982 edition" : "the enhanced game";
+}
+
+// A new game in the chosen edition: the first 'look' creates it.
+async function play() {
   only("game");
-  $("#who").textContent = name;
+  $("#who").textContent = name + " · " + editionLabel();
   $("#scroll").innerHTML = "";
-  show((await send("/api/command", {name, text: "look", mode})).lines
+  show((await send("/api/command", {name, text: "look", edition})).lines
        .filter(l => !l.startsWith('<span class="echo"')));
   $("#cmd").focus();
 }
@@ -315,7 +336,7 @@ async function play(mode) {
 // A returning game: show the saved scrollback.
 function resume(state) {
   only("game");
-  $("#who").textContent = name;
+  $("#who").textContent = name + " · " + editionLabel();
   $("#scroll").innerHTML = "";
   show(state.lines);
   $("#cmd").focus();
