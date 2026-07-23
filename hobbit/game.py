@@ -11,7 +11,7 @@ from . import commands, ui
 from .entities import Character, Player
 from .items import ItemCatalog
 from .npc import NPC, NPCDef, build_npc
-from .parser import FREE_VERBS, Command, Parser
+from .parser import ADDED_VERBS, FREE_VERBS, Command, Parser
 from .save import load_game, save_game
 from .world import World
 
@@ -405,7 +405,12 @@ class Game:
     def ending_lines(self) -> list[str]:
         """Everything after the killing blow, in the order it should be read:
         the company loads the hoard, the roster shows who ended up bearing
-        what, the reckoning totals it, and only then is the game called won."""
+        what, the reckoning totals it, and only then is the game called won.
+
+        The purist game ends the way 1982 did -- on the deed itself, with no
+        company audit of who carried out what."""
+        if self.authentic:
+            return ["\nYou have won!"]
         from . import commands
         lines = list(self.gather_the_hoard())
         lines.append(ui.Note("\nAnd so the company stood, at the end of it:"))
@@ -1129,7 +1134,11 @@ class Game:
             loc.slain.append(character.name)
         # A fallen companion is known and mourned by the whole company, and
         # awaits a proper burial once the fighting is done (see the turn loop).
-        if isinstance(character, NPC) and character.def_.is_party:
+        # All of that -- the word passing through the company, the cairn, the
+        # grief -- is this recreation's doing; in 1982 a character simply fell.
+        # So the purist game skips it: the body's loot drops and they are gone.
+        if (isinstance(character, NPC) and character.def_.is_party
+                and not self.authentic):
             character.death_place = loc.name
             self._pending_burials.append((loc.id, character.name))
             self.company_news(
@@ -1234,6 +1243,12 @@ class Game:
             if actor is None:
                 messages.append(f"There is no one here called {cmd.actor_override}.")
                 continue
+            # In the purist game the recreation's own verbs simply don't exist:
+            # treat them as words the 1982 parser never knew, so 'party' and the
+            # like are turned away instead of exposing a modern system.
+            if self.authentic and cmd.verb in ADDED_VERBS:
+                cmd.unknown = True
+                cmd.error = f"I don't know how to '{cmd.raw}'."
             messages.extend(commands.execute(self, actor, cmd))
             if not cmd.unknown and cmd.verb not in FREE_VERBS:
                 acted = True
@@ -1425,9 +1440,12 @@ class Game:
                                                 "Bilbo can go no further.")
                     elif was_alive and not char.alive and isinstance(char, NPC):
                         needs_msgs.extend(self.handle_death(char))
-                elif not char.is_weak() and char.health < char.max_health:
+                elif (not self.authentic and not char.is_weak()
+                        and char.health < char.max_health):
                     # Wounds mend when safe and fed -- fast in a haven's care
-                    # (Rivendell, an inn), slowly on the open road.
+                    # (Rivendell, an inn), slowly on the open road. This gentle
+                    # healing is a modern mercy: the purist game keeps its
+                    # wounds, so there a hurt only ever deepens.
                     at_haven = self.world.get(char.location_id).food_source
                     char.health = min(char.max_health, char.health + (5 if at_haven else 1))
                     if at_haven and char.location_id == self.player.location_id:

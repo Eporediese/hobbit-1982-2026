@@ -897,7 +897,23 @@ def do_quit(game: "Game", actor: Character, cmd: Command) -> list[str]:
 
 
 def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
-    lines = [
+    if game.authentic:
+        # The purist vocabulary is the 1982 one: none of the recreation's
+        # party/status/follow/stock verbs, so help must not advertise them.
+        return [
+            "Verbs: go/north/south/east/west/up/down, take, drop, attack, "
+            "give X to Y, open, close, talk to, look, examine, inventory, eat, "
+            "wear, remove, wield, light, rest, wait, save, load, quit.",
+            "You can address a companion directly ('thorin, attack the goblin') "
+            "and chain commands with 'and'/'then' ('take sword and go north') -- "
+            "just as the original's Inglish parser allowed.",
+            "You are playing the PURIST game -- the raw 1982-flavoured "
+            "experience: reverted descriptions, the map is just wall flavour "
+            "(not an object), no scenery/examine system, and the original quirky "
+            "locks, so some rooms cannot be reached. This was chosen when the "
+            "game began and holds for the whole journey.",
+        ]
+    return [
         "Verbs: go/north/south/east/west/up/down, take, drop, attack, give X to Y, "
         "open, close, talk to, look, examine, inventory, eat, wear, remove, wield, "
         "light, rest, wait, follow, unfollow, status, party, stock up, save, load, quit.",
@@ -911,20 +927,10 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
              "draws you along behind -- 'wait' keeps pace; 'unfollow' "
              "-- or 'stop following' -- hands the lead back to you. The company "
              "travel with you, fighting and fending for themselves along the way."),
+        Note("You are playing the ENHANCED game. The purist game is a separate "
+             "choice made when a new game begins, not a switch you can throw "
+             "mid-journey. 'mode' reports which you're in."),
     ]
-    if game.authentic:
-        lines.append("You are playing the PURIST game -- the raw 1982-flavoured "
-                       "experience: reverted descriptions, the map is just wall "
-                       "flavour (not an object), no scenery/examine system, and the "
-                       "original quirky locks, so some rooms cannot be reached. This "
-                       "was chosen when the game began and holds for the whole "
-                       "journey; start without '--purist' for the enhanced game.")
-    else:
-        lines.append(Note(
-            "You are playing the ENHANCED game. The purist game is a separate "
-            "choice made when a new game begins, not a switch you can throw "
-            "mid-journey. 'mode' reports which you're in."))
-    return lines
 
 
 # Which game you are playing is settled when it begins and cannot change

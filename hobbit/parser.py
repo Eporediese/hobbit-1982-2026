@@ -13,6 +13,15 @@ STOPWORDS = {"the", "a", "an", "at", "my", "please"}
 FREE_VERBS = {"look", "examine", "inventory", "status", "party", "help",
               "mode", "purist", "save", "load", "quit"}
 
+# Verbs this recreation added that have no 1982 equivalent: the party/roster and
+# status read-outs, the rations system, the follow/march helper, and the
+# draw-and-sheathe combat prep. In the purist game these words are not in the
+# vocabulary at all -- typing one gets the same "I don't know how" a 1982 player
+# would have got, rather than a modern feature the purist game claims not to
+# have. (The recreation-meta verbs 'mode'/'purist' and the program utilities
+# save/load/quit/help stay: they operate the program, not the 1937 world.)
+ADDED_VERBS = {"party", "status", "stock", "follow", "unfollow", "sheathe"}
+
 DIRECTION_WORDS = {
     "north": "north", "n": "north",
     "south": "south", "s": "south",
