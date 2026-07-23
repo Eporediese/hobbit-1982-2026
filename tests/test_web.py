@@ -243,6 +243,19 @@ def test_quit_and_exit_guide_rather_than_stranding(server):
         assert not data["over"]          # the game is not over, just idling
 
 
+def test_load_and_save_explain_the_automatic_journey(server):
+    """The terminal game's save/load have no meaning here -- every turn is
+    written automatically. do_load only set a flag the web loop never reads, so
+    a player who typed 'load' (after 'restart', hoping to get their game back)
+    got a blank reply."""
+    for word in ("load", "save", "restore"):
+        data = _post(server, "/api/command", {"name": "keeper", "text": word})
+        joined = " ".join(data["lines"])
+        assert f"&gt; {word}" in joined          # the command is echoed
+        assert "saves itself" in joined          # ...and answered, not ignored
+        assert not data["over"]
+
+
 def test_restart_shows_the_opening_room(server):
     """Restart has to land you somewhere, not on a bare confirmation."""
     _post(server, "/api/command", {"name": "r", "text": "east"})

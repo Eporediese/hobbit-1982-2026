@@ -34,11 +34,21 @@ _the = ui.with_article
 
 def _find_character(game: "Game", word: str, candidate_ids: list[str]) -> str | None:
     word = word.lower()
+    # The parser strips articles, so "attack William the troll" arrives here as
+    # "william troll" -- which is NOT a substring of the name "william the
+    # troll". So match on whole words too: every word the player gave must
+    # appear in the name. "william troll" and "troll" both find the troll;
+    # "william" alone finds only William.
+    tokens = word.split()
     for char_id in candidate_ids:
         char = game.characters.get(char_id)
         if not char:
             continue
-        if word == char.id or word in char.name.lower() or word in (a.lower() for a in char.aliases):
+        name = char.name.lower()
+        if (word == char.id
+                or word in name
+                or (tokens and all(t in name.split() for t in tokens))
+                or word in (a.lower() for a in char.aliases)):
             return char_id
     return None
 

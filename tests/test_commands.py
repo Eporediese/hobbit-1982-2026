@@ -1,5 +1,32 @@
+from hobbit.commands import _find_character
 from hobbit.game import Game
 from hobbit.ui import Note
+
+
+def test_a_character_is_found_by_a_name_with_a_stripped_article():
+    """The parser strips articles, so 'attack William the troll' reaches the
+    matcher as 'william troll' -- which is not a substring of the name
+    'William the troll'. Matching whole words instead finds it."""
+    game = Game(seed=1)
+    trolls = ["troll_bert", "troll_william", "troll_tom"]
+    assert _find_character(game, "william troll", trolls) == "troll_william"
+    assert _find_character(game, "william the troll", trolls) == "troll_william"
+    assert _find_character(game, "william", trolls) == "troll_william"
+    assert _find_character(game, "bert", trolls) == "troll_bert"
+    assert _find_character(game, "troll", trolls) in trolls   # any of them
+    assert _find_character(game, "smaug", trolls) is None
+
+
+def test_attacking_a_troll_by_its_full_name_lands_the_blow():
+    """Regression: 'attack William the troll' answered 'There is no william
+    troll here to attack' while the dwarves were fighting it by name."""
+    game = Game(seed=1)
+    game.player.location_id = "trolls_clearing"
+    msgs = game.process_player_input("attack william the troll")
+    assert not any("here to attack" in str(m).lower() for m in msgs)
+    # the player's own blow (hit or miss) resolved against William, by name
+    assert any(game.player.name in str(m) and "William the troll" in str(m)
+               for m in msgs)
 
 
 def test_look_marks_locked_exits_in_enhanced_mode():

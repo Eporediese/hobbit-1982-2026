@@ -227,6 +227,18 @@ class Handler(BaseHTTPRequestHandler):
                                  "whenever you like and your journey waits for "
                                  "you. To begin again from Bag End, type "
                                  "'restart'.")]
+            elif word in ("save", "load", "restore"):
+                # These belong to the terminal game, which has a save file and a
+                # host loop to load it. Here every turn is written to the
+                # player's own save automatically -- do_load would just set a
+                # flag nothing reads, leaving the player staring at a blank
+                # reply (as one did after 'restart' + 'load'). Say what's true.
+                lines = [f'<span class="echo">&gt; {html.escape(text)}</span>',
+                         to_html("Your journey saves itself after every turn -- "
+                                 "there's nothing to save or load by hand. Close "
+                                 "the tab whenever you like and you'll pick up "
+                                 "right where you left off. To start over from "
+                                 "Bag End, type 'restart'.")]
             elif game.won or game.lost:
                 lines = [to_html("The journey is over. Type 'restart' to "
                                  "begin again.")]
