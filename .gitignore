@@ -4,9 +4,14 @@ __pycache__/
 .venv/
 venv/
 
-# A player's in-progress journey, not source.
+# A player's in-progress journey, not source. `*.bak`/`*.checkpoint.json` cover
+# save backups pulled down from the server for recovery, so a stray one can't be
+# committed to a public repo.
 savegame.json
 saves/
+*.bak
+*.checkpoint.json
+*.transcript.json
 
 # Credentials. This repository is public: a key committed here is a key
 # published, and rotating it afterwards is the only remedy. These patterns are

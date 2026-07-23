@@ -128,9 +128,12 @@ def do_take(game: "Game", actor: Character, cmd: Command) -> list[str]:
     if not cmd.obj:
         return ["Take what?"]
     loc = game.world.get(actor.location_id)
-    if (loc.dark and actor.light_remaining <= 0
+    if (loc.dark and not game.room_is_lit(actor.location_id)
             and not game.player_can_see_in_dark(actor)):
-        return ["It's too dark to see what's here. You need a light."]
+        # The hint is for the player; a torchless dwarf fumbling in the dark
+        # shouldn't narrate it once per companion.
+        return (["It's too dark to see what's here. You need a light."]
+                if actor.id == "bilbo" else [])
     # visible_items hides added-but-reverted props (the map) in authentic mode,
     # so they can't be picked up -- they're just wall flavor there.
     item_id = _find_item(game, cmd.obj, game.visible_items(loc))
@@ -534,7 +537,7 @@ def do_examine(game: "Game", actor: Character, cmd: Command) -> list[str]:
     if not cmd.obj:
         return ["Examine what?"]
     loc = game.world.get(actor.location_id)
-    if (loc.dark and actor.light_remaining <= 0
+    if (loc.dark and not game.room_is_lit(actor.location_id)
             and not game.player_can_see_in_dark(actor)):
         item_id = _find_item(game, cmd.obj, actor.inventory)
         return _describe_item(game, item_id) if item_id else ["It's too dark to see."]

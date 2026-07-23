@@ -183,6 +183,44 @@ def test_the_dark_still_stops_bilbo_when_no_one_carries_a_light():
     assert game.player.location_id == "trolls_clearing"
 
 
+def test_you_can_take_things_by_a_companions_torch():
+    """The room the torch lights is a room you can act in, not just see. Taking
+    an item used to check Bilbo's own light, so in a cave lit only by Balin's
+    torch 'take sting' failed with 'too dark' -- while Balin walked off with
+    it."""
+    game = Game(seed=1)
+    cave = game.world.get("troll_cave")
+    game.player.location_id = "troll_cave"
+    balin = game.characters["balin"]
+    game.world.get(balin.location_id).npcs.remove("balin")
+    balin.location_id = "troll_cave"
+    cave.npcs.append("balin")
+    balin.light_remaining = 10
+    if "sting" not in cave.items:
+        cave.items.append("sting")
+    out = game.process_player_input("take sting")
+    assert "sting" in game.player.inventory
+    assert not any("too dark" in str(m).lower() for m in out)
+
+
+def test_a_torchless_companion_does_not_narrate_its_fumbling():
+    """When the room really is dark, a dwarf who can't see to loot fails in
+    silence -- the 'you need a light' hint is for the player, and one per
+    companion was a wall of it."""
+    from hobbit.commands import do_take
+    from hobbit.parser import Command
+    game = Game(seed=1)
+    cave = game.world.get("troll_cave")
+    assert cave.dark and not game.room_is_lit("troll_cave")
+    kili = game.characters["kili"]
+    kili.location_id = "troll_cave"
+    assert do_take(game, kili, Command(verb="take", obj="sting")) == []
+    # ...but Bilbo, in the same dark, still gets told how to fix it
+    game.player.location_id = "troll_cave"
+    out = do_take(game, game.player, Command(verb="take", obj="sting"))
+    assert any("need a light" in str(m).lower() for m in out)
+
+
 def test_a_companion_strikes_a_light_when_the_room_is_black():
     """The torch is no use in a pack, and nobody can strike a blow in the
     dark of Mirkwood."""
