@@ -40,6 +40,9 @@
   .choice span { color:var(--dim); font-size:.9rem; line-height:1.45 }
   .banner { display:block; width:100%; max-width:22rem; margin:0 auto 1.5rem }
   .banner svg { display:block; width:100% }
+  .switch { margin-top:1.25rem; color:var(--dim); font-size:.9rem }
+  .switch a { color:var(--accent); text-decoration:none }
+  .switch a:hover, .switch a:focus { text-decoration:underline; outline:none }
 </style>
 
 <!-- The shared word, if the server asks for one -->
@@ -82,6 +85,21 @@
             rooms unreachable), the hunger death-spiral. Faithful, and not
             always winnable.</span>
     </button>
+  </div>
+  <p class="switch" id="whoami" hidden>Playing as <b id="whoisit"></b>.
+     <a href="#" id="switchplayer">Not you?</a></p>
+</div>
+
+<!-- A crossroads: you chose an edition you have no game in, but a journey is
+     waiting under the other one. Offer it rather than silently starting fresh. -->
+<div class="panel" id="crossroads" hidden>
+  <h1>The Hobbit</h1>
+  <p id="crossmsg"></p>
+  <div class="choices">
+    <button class="choice" id="crosscontinue">
+      <b id="crosscontinueb"></b><span id="crosscontinues"></span></button>
+    <button class="choice" id="crossfresh">
+      <b id="crossfreshb"></b><span id="crossfreshs"></span></button>
   </div>
 </div>
 
@@ -164,11 +182,29 @@ let edition = localStorage.getItem("hobbit-edition") || "";
 })();
 
 function only(id) {
-  for (const el of ["gate", "frontdoor", "namepanel", "bar", "scroll", "turn"])
+  for (const el of ["gate", "frontdoor", "namepanel", "crossroads",
+                    "bar", "scroll", "turn"])
     $("#" + el).hidden = true;
   if (id === "game") { $("#bar").hidden = $("#scroll").hidden = $("#turn").hidden = false; }
   else $("#" + id).hidden = false;
+  if (id === "frontdoor") paintFrontDoor();
 }
+
+// The front door shows who it thinks you are, with a way to switch.
+function paintFrontDoor() {
+  const who = $("#whoami");
+  if (name) { $("#whoisit").textContent = name; who.hidden = false; }
+  else who.hidden = true;
+}
+
+$("#switchplayer").onclick = e => {
+  e.preventDefault();
+  name = "";
+  localStorage.removeItem("hobbit-name");
+  only("namepanel");
+  $("#nameinput").value = "";
+  $("#nameinput").focus();
+};
 
 function show(lines) {
   const box = $("#scroll");
@@ -313,14 +349,44 @@ async function begin() {
   // then that edition's game -- resumed if it exists, started fresh if not.
   if (!edition) { only("frontdoor"); return; }
   if (!name) { only("namepanel"); $("#nameinput").focus(); return; }
-  const q = "name=" + encodeURIComponent(name) + "&edition=" + encodeURIComponent(edition);
-  const state = await api("/api/state?" + q);
-  if (state.new) { play(); return; }
-  resume(state);
+  const state = await api("/api/state?" + query(edition));
+  if (!state.new) { resume(state); return; }
+  // No game in this edition yet. Before starting fresh, make sure we aren't
+  // stranding a journey the player has under the OTHER edition (the trap that
+  // made a wrong-door pick look like a lost save).
+  const other = edition === "1982" ? "enhanced" : "1982";
+  const otherState = await api("/api/state?" + query(other));
+  if (!otherState.new) { crossroads(other); return; }
+  play();
 }
 
-function editionLabel() {
-  return edition === "1982" ? "the 1982 edition" : "the enhanced game";
+const query = ed => "name=" + encodeURIComponent(name) +
+                    "&edition=" + encodeURIComponent(ed);
+
+function label(ed) {
+  return ed === "1982" ? "the 1982 edition" : "the enhanced game";
+}
+function editionName(ed) {
+  return ed === "1982" ? "1982 Edition" : "Enhanced Game";
+}
+function editionLabel() { return label(edition); }
+
+// The crossroads: chosen edition is empty, but the other holds a journey.
+function crossroads(other) {
+  $("#crossmsg").innerHTML =
+    "You've no " + editionName(edition) + " game as <b>" + escapeHtml(name) +
+    "</b> yet — but your " + editionName(other) + " is waiting.";
+  $("#crosscontinueb").textContent = "Continue your " + editionName(other);
+  $("#crosscontinues").textContent = "Pick up the journey you have in progress.";
+  $("#crossfreshb").textContent = "Start a new " + editionName(edition);
+  $("#crossfreshs").textContent = "Begin a fresh, separate journey.";
+  $("#crosscontinue").onclick = () => {
+    edition = other;
+    localStorage.setItem("hobbit-edition", edition);
+    begin();
+  };
+  $("#crossfresh").onclick = () => play();
+  only("crossroads");
 }
 
 // A new game in the chosen edition: the first 'look' creates it.
