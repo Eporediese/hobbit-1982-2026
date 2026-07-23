@@ -1129,8 +1129,8 @@ class Game:
         # Say what falls with them. Loot used to drop in total silence, so a
         # key the story turns on could sit unnoticed on the floor forever.
         if dropped:
-            names = _join_names([ui.with_article(ui.item_display_name(self.items.get(i)))
-                                 for i in dropped])
+            names = ui.tally_names([ui.item_display_name(self.items.get(i))
+                                    for i in dropped])
             messages.append(ui.sentence(f"{character.name} falls, leaving {names} on the ground."))
         if character.id != "bilbo" and character.id in loc.npcs:
             loc.npcs.remove(character.id)
@@ -1208,7 +1208,8 @@ class Game:
             lines.append(f"{_join_names(monsters)} {loom} here.")
         visible = self.visible_items(loc)
         if visible:
-            item_names = ", ".join(ui.item_display_name(self.items.get(i)) for i in visible)
+            item_names = ", ".join(ui.count_items(
+                [ui.item_display_name(self.items.get(i)) for i in visible]))
             lines.append(f"You see: {item_names}.")
         # Mark locked ways so the player knows there's a door to deal with
         # (a modern courtesy, so it's coloured and absent in purist mode).

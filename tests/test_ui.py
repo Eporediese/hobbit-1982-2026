@@ -34,6 +34,22 @@ def test_present_capitalises_lines_that_open_with_a_lower_case_name():
             ["Wood-elf guard bars the way."]
 
 
+def test_identical_items_are_tallied_not_repeated():
+    """A fallen dwarf dropping seven loaves should read 'seven loaves of
+    bread', not 'the loaf of bread' seven times over."""
+    from hobbit import ui
+    assert ui.pluralize("loaf of bread") == "loaves of bread"
+    assert ui.pluralize("elven cake") == "elven cakes"
+    assert ui.pluralize("small pile of gold coins") == "small piles of gold coins"
+    # the drop line (articles, prose join)
+    drop = ui.tally_names(["old map"] + ["loaf of bread"] * 7)
+    assert drop == "the old map and seven loaves of bread"
+    # the room listing (no articles, comma join, singles unchanged)
+    assert ui.count_items(["walking stick", "torch"]) == ["walking stick", "torch"]
+    assert ui.count_items(["loaf of bread"] * 3 + ["torch"]) == \
+        ["three loaves of bread", "torch"]
+
+
 def test_the_mode_cannot_be_changed_mid_journey():
     """Purist and enhanced are different worlds, not two views of one -- the map
     is a real item in one and wall flavour in the other, the Elvenking's gate is

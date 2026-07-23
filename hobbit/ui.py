@@ -71,21 +71,62 @@ def join_names(names: list[str]) -> str:
 _NUMBER_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
                  7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 
+# Words that don't just take an -s. Only the ones that actually occur as item
+# or creature names need to be here.
+_IRREGULAR_PLURALS = {"loaf": "loaves", "leaf": "leaves", "knife": "knives",
+                      "elf": "elves", "wolf": "wolves", "man": "men",
+                      "tooth": "teeth", "foot": "feet"}
 
-def tally_names(names: list[str]) -> str:
-    """Render a list of things as prose, counting repeats and giving each its
-    article: 'the goblin scout', 'two wargs', 'Tom the troll and the warg'."""
+
+def _plural_word(word: str) -> str:
+    lower = word.lower()
+    if lower in _IRREGULAR_PLURALS:
+        plural = _IRREGULAR_PLURALS[lower]
+        return plural if word.islower() else plural.capitalize()
+    if lower.endswith(("s", "x", "z", "ch", "sh")):
+        return word + "es"
+    if lower.endswith("y") and lower[-2:-1] not in "aeiou":
+        return word[:-1] + "ies"
+    return word + "s"
+
+
+def pluralize(name: str) -> str:
+    """The plural of a thing's name. Pluralises the head of an 'X of Y' name --
+    'loaf of bread' -> 'loaves of bread', 'small pile of gold coins' -> 'small
+    piles of gold coins' -- and otherwise the last word: 'elven cake' -> 'elven
+    cakes', 'goblin scout' -> 'goblin scouts'."""
+    head, sep, tail = name.partition(" of ")
+    words = head.split()
+    if words:
+        words[-1] = _plural_word(words[-1])
+    return " ".join(words) + sep + tail
+
+
+def _counts(names: list[str]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for name in names:  # dicts keep insertion order, so the prose does too
         counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
+def tally_names(names: list[str]) -> str:
+    """Render a list of things as prose, counting repeats and giving each its
+    article: 'the goblin scout', 'two wargs', 'the old map and seven loaves of
+    bread'."""
     parts = []
-    for name, n in counts.items():
+    for name, n in _counts(names).items():
         if n == 1:
             parts.append(with_article(name))
         else:
-            plural = name if name.endswith("s") else f"{name}s"
-            parts.append(f"{_NUMBER_WORDS.get(n, str(n))} {plural}")
+            parts.append(f"{_NUMBER_WORDS.get(n, str(n))} {pluralize(name)}")
     return join_names(parts)
+
+
+def count_items(names: list[str]) -> list[str]:
+    """A plain listing (no articles) with repeats folded into a count:
+    ['loaf of bread'] * 7 + ['torch'] -> ['seven loaves of bread', 'torch']."""
+    return [name if n == 1 else f"{_NUMBER_WORDS.get(n, str(n))} {pluralize(name)}"
+            for name, n in _counts(names).items()]
 
 
 def sentence(text: str) -> str:
