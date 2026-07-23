@@ -20,26 +20,36 @@ import json
 import re
 import threading
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from .game import Game
 from .save import load_game, save_game
 
-# A player name has to be safe as a filename and readable in a URL. Family
-# members type these, so keep it forgiving but bounded.
-_NAME_OK = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _-]{0,31}$")
+# What a name may NOT contain. The real constraint is that the name becomes a
+# filename, so this blocks the path-dangerous characters and the dot (which
+# would collide with the .json / .transcript.json suffixes), rather than
+# restricting to ASCII -- a family has O'Briens, Josés and Renées in it, and
+# an accented letter is a perfectly good filename.
+_NAME_BAD = re.compile(r"[^\w '’.-]|[.]", re.UNICODE)
 
 
 def normalise_name(raw: str) -> str | None:
     """Fold a typed name to its canonical form, or None if unusable.
 
-    'Duncan', 'duncan' and '  Duncan  ' are the same player -- a relative
-    who capitalises differently on their phone should not find a new empty
-    game waiting for them.
+    'Duncan', 'duncan' and '  Duncan  ' are the same player -- a relative who
+    capitalises differently on their phone should not find a new empty game
+    waiting for them. Real names are welcome: apostrophes and accented letters
+    pass; only characters that would be unsafe or ambiguous in a filename are
+    turned away.
     """
-    name = " ".join((raw or "").split())
-    if not _NAME_OK.match(name):
+    # Compose accents to one canonical form, so "José" typed two different ways
+    # (é as one code point or e + combining accent) is one player, not two.
+    name = unicodedata.normalize("NFC", " ".join((raw or "").split()))
+    if not name or len(name) > 32:
+        return None
+    if _NAME_BAD.search(name):
         return None
     return name.lower()
 

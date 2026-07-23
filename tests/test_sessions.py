@@ -198,3 +198,42 @@ def test_known_players_ignores_transcript_files(store):
     store.record(store.get("alice"), ["x"])
     store.save("alice")
     assert store.known_players() == ["alice"]      # not "alice.transcript"
+
+
+def test_real_names_with_apostrophes_and_accents_are_welcome():
+    """A family has O'Briens, Josés and Renées in it. The old ASCII-only
+    rule turned their real names away."""
+    for good in ("O'Brien", "José", "Zoë", "Søren", "Renée", "Anne-Marie",
+                 "Mary Jane", "田中"):
+        assert normalise_name(good) is not None, good
+
+
+def test_names_that_are_unsafe_as_a_filename_are_still_refused():
+    for bad in ("", "   ", "../etc/passwd", "bob/../bob", "<script>",
+                "a" * 40, "a.json", "night\x00day", "St. John"):
+        assert normalise_name(bad) is None, bad
+
+
+def test_an_accented_name_round_trips_through_a_unicode_save(tmp_path):
+    store = SessionStore(tmp_path)
+    name = normalise_name("José")
+    session = store.get(name)
+    session.game.process_player_input("east")
+    store.record(session, ["a line"])
+    store.save(name)
+
+    fresh = SessionStore(tmp_path)
+    resumed = fresh.get(name)
+    assert resumed.game.player.location_id == session.game.player.location_id
+    assert resumed.transcript == ["a line"]
+
+
+def test_a_player_named_after_a_companion_still_plays_as_bilbo(tmp_path):
+    """The session name and the in-game character are independent, so a
+    relative called Gandalf gets their own journey as the hobbit, not a
+    collision with the wizard."""
+    store = SessionStore(tmp_path)
+    session = store.get(normalise_name("Gandalf"))
+    assert session.game.player.id == "bilbo"
+    assert "gandalf" in session.game.characters   # the real wizard is still there
+    assert session.game.characters["gandalf"] is not session.game.player
