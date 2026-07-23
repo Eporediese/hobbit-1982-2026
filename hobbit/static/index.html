@@ -29,6 +29,14 @@
   .panel h1 { font-weight:600; letter-spacing:.03em }
   .panel form { border:0; padding:0; margin-top:1rem }
   .err { color:#c98; min-height:1.4em }
+  .choices { display:flex; flex-direction:column; gap:.75rem; margin-top:1.25rem;
+             text-align:left }
+  .choice { display:flex; flex-direction:column; gap:.35rem; padding:1rem;
+            background:#1d1a15; border:1px solid #35302a; border-radius:8px;
+            cursor:pointer; font:inherit; color:var(--fg) }
+  .choice:hover, .choice:focus { border-color:var(--added); outline:none }
+  .choice b { color:var(--fg); font-size:1.05rem }
+  .choice span { color:var(--dim); font-size:.9rem; line-height:1.45 }
 </style>
 
 <!-- The shared word, if the server asks for one -->
@@ -55,6 +63,27 @@
   <p class="err" id="nameerr"></p>
 </div>
 
+<!-- Which game (new players only) -->
+<div class="panel" id="modepanel" hidden>
+  <h1>The Hobbit</h1>
+  <p>Which tale will you play? This is chosen once and holds for the whole
+     journey.</p>
+  <div class="choices">
+    <button class="choice" data-mode="enhanced">
+      <b>The Enhanced Game</b>
+      <span>The recreation: a world that moves while you're away, companions
+            with a voice, the puzzles made winnable. Additions are marked in
+            cyan. Recommended.</span>
+    </button>
+    <button class="choice" data-mode="purist">
+      <b>The Purist Game</b>
+      <span>1982 as it shipped — reverted prose, the original's quirky locks
+            (some rooms unreachable), the hunger death-spiral. Faithful, and
+            not always winnable. For the curious.</span>
+    </button>
+  </div>
+</div>
+
 <!-- The game -->
 <header hidden id="bar"><b>The Hobbit</b><span id="who"></span></header>
 <div id="scroll" hidden></div>
@@ -68,7 +97,7 @@ const $ = s => document.querySelector(s);
 let name = localStorage.getItem("hobbit-name") || "";
 
 function only(id) {
-  for (const el of ["gate", "namepanel", "bar", "scroll", "turn"])
+  for (const el of ["gate", "namepanel", "modepanel", "bar", "scroll", "turn"])
     $("#" + el).hidden = true;
   if (id === "game") { $("#bar").hidden = $("#scroll").hidden = $("#turn").hidden = false; }
   else $("#" + id).hidden = false;
@@ -111,8 +140,14 @@ $("#nameform").onsubmit = e => {
   if (!chosen) { $("#nameerr").textContent = "A name, please."; return; }
   name = chosen;
   localStorage.setItem("hobbit-name", name);
-  play();
+  begin();
 };
+
+// New players choose which tale before the game exists; a returning player
+// keeps whichever they began with.
+for (const b of document.querySelectorAll(".choice")) {
+  b.onclick = () => play(b.dataset.mode);
+}
 
 // Command history: Up/Down walk through past commands, the way the terminal
 // did. `pos` is where we are in the list (== length means "not browsing"),
@@ -196,18 +231,31 @@ function setInput(value) {
   requestAnimationFrame(() => el.setSelectionRange(value.length, value.length));
 }
 
-function begin() {
+async function begin() {
   if (!name) { only("namepanel"); $("#nameinput").focus(); return; }
-  play();
+  // A returning player drops straight in; a new one is offered the choice of
+  // tale first.
+  const state = await api("/api/state?name=" + encodeURIComponent(name));
+  if (state.new) { only("modepanel"); return; }
+  resume(state);
 }
 
-async function play() {
+// A new game: mode is set on the first command that creates it.
+async function play(mode) {
   only("game");
   $("#who").textContent = name;
-  const state = await api("/api/state?name=" + encodeURIComponent(name));
   $("#scroll").innerHTML = "";
-  if (state.lines && state.lines.length) show(state.lines);
-  else show((await send("/api/command", {name, text: "look"})).lines);
+  show((await send("/api/command", {name, text: "look", mode})).lines
+       .filter(l => !l.startsWith('<span class="echo"')));
+  $("#cmd").focus();
+}
+
+// A returning game: show the saved scrollback.
+function resume(state) {
+  only("game");
+  $("#who").textContent = name;
+  $("#scroll").innerHTML = "";
+  show(state.lines);
   $("#cmd").focus();
 }
 

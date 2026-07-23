@@ -102,9 +102,19 @@ class SessionStore:
             return []
         return [str(x) for x in lines][-self.max_transcript:]
 
-    def _new_game(self) -> Game:
-        return Game(authentic=self.authentic, llm=self.llm,
-                    llm_fast=self.llm_fast)
+    def _new_game(self, authentic: bool | None = None) -> Game:
+        return Game(authentic=self.authentic if authentic is None else authentic,
+                    llm=self.llm, llm_fast=self.llm_fast)
+
+    def has(self, name: str) -> bool:
+        """Is there already a game for this player, in memory or on disk?
+
+        Lets a caller offer a first-time choice (which mode to play) to a new
+        player without accidentally creating the game first -- get() would
+        create it eagerly in the default mode, and the mode can't change once
+        the journey has begun."""
+        with self._lock:
+            return name in self._sessions or self.path_for(name).exists()
 
     def _load_from_disk(self, name: str) -> Game | None:
         path = self.path_for(name)
@@ -126,8 +136,12 @@ class SessionStore:
 
     # -- public API -----------------------------------------------------
 
-    def get(self, name: str) -> Session:
-        """The player's session: resumed from memory, then disk, else new."""
+    def get(self, name: str, authentic: bool | None = None) -> Session:
+        """The player's session: resumed from memory, then disk, else new.
+
+        `authentic` only bites when a game is created here for the first time
+        -- once a journey exists, its mode is fixed and the argument is
+        ignored, so passing it on a returning player is harmless."""
         with self._lock:
             session = self._sessions.get(name)
             if session is not None:
@@ -138,7 +152,8 @@ class SessionStore:
             # fresh start with a leftover transcript file would show history
             # from a game that no longer exists.
             transcript = self._load_transcript(name) if game is not None else []
-            session = Session(name=name, game=game or self._new_game(),
+            session = Session(name=name,
+                              game=game or self._new_game(authentic),
                               transcript=transcript)
             self._sessions[name] = session
             return session

@@ -256,3 +256,45 @@ def test_restart_shows_the_opening_room(server):
     joined = " ".join(data["lines"])
     assert "set out again" in joined
     assert "Bag End" in joined
+
+
+def test_a_new_player_is_flagged_new_without_a_game_being_made(server, tmp_path):
+    """The mode choice must come before the game exists -- checking state
+    can't quietly create it in the default mode."""
+    state = _get(server, "/api/state?name=freshfish")
+    assert state["new"] is True
+    assert state["lines"] == []
+
+
+def test_choosing_purist_starts_a_purist_game(server):
+    data = _post(server, "/api/command",
+                 {"name": "purist_pat", "text": "look", "mode": "purist"})
+    # the map is wall-flavour in purist -- 'examine map' finds nothing
+    m = _post(server, "/api/command", {"name": "purist_pat", "text": "examine map"})
+    assert any("no map" in line.lower() for line in m["lines"])
+    assert not any("added" in line for line in m["lines"])   # no cyan additions
+
+
+def test_the_default_choice_is_the_enhanced_game(server):
+    _post(server, "/api/command",
+          {"name": "enh", "text": "look", "mode": "enhanced"})
+    m = _post(server, "/api/command", {"name": "enh", "text": "examine map"})
+    assert any("moon-letters" in line.lower() for line in m["lines"])
+
+
+def test_mode_is_fixed_after_the_game_exists(server):
+    """A returning player keeps their tale -- a later mode hint is ignored."""
+    _post(server, "/api/command",
+          {"name": "steady", "text": "look", "mode": "purist"})
+    # a subsequent command claiming 'enhanced' must not flip an existing game
+    _post(server, "/api/command",
+          {"name": "steady", "text": "look", "mode": "enhanced"})
+    m = _post(server, "/api/command", {"name": "steady", "text": "examine map"})
+    assert any("no map" in line.lower() for line in m["lines"])   # still purist
+
+
+def test_a_returning_player_is_not_flagged_new(server):
+    _post(server, "/api/command", {"name": "back", "text": "look"})
+    state = _get(server, "/api/state?name=back")
+    assert state["new"] is False
+    assert state["lines"]

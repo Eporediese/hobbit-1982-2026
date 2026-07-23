@@ -912,9 +912,9 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
     else:
         lines.append(Note(
             "You are playing the ENHANCED game, with added features shown in cyan. "
-            "The purist game is a separate choice made at the start "
-            "('python main.py --purist'), not a switch you can throw mid-journey. "
-            "'mode' reports which you're in."))
+            "The purist game is a separate choice made when a new game begins, "
+            "not a switch you can throw mid-journey. 'mode' reports which "
+            "you're in."))
     return lines
 
 
@@ -923,10 +923,10 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
 # again, locks misbehave, the Elvenking's gate is not barred and there are no
 # barrels), so flipping halfway would rearrange the world around a company
 # already standing in it.
-_MODE_IS_FIXED = ("The mode is settled when the game begins and cannot be changed "
+_MODE_IS_FIXED = ("The mode is settled when a game begins and cannot be changed "
                   "mid-journey -- purist and enhanced are different worlds, not two "
-                  "views of one. Start with 'python main.py --purist' for the raw "
-                  "1982 experience, or without it for the enhanced game.")
+                  "views of one. To play the other, begin a new game and choose it "
+                  "at the start.")
 
 
 def do_mode(game: "Game", actor: Character, cmd: Command) -> list[str]:

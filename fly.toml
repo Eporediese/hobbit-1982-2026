@@ -1,26 +1,26 @@
-# Fly.io deployment. `fly launch --no-deploy` once to create the app, set the
-# secrets below, then `fly deploy`. See DEPLOY.md.
-app = "hobbit-1982-2026"
-primary_region = "lhr"           # London; pick the one nearest the family
+# fly.toml app configuration file generated for hobbit-1982-2026 on 2026-07-22T19:56:01-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'hobbit-1982-2026'
+primary_region = 'lhr'
 
 [build]
-
 [env]
-  HOBBIT_SAVES = "/data/saves"
+  HOBBIT_SAVES = '/data/saves'
+
+[[mounts]]
+  source = 'hobbit_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "suspend"   # idle -> suspended, so it costs ~nothing
-  auto_start_machines = true       # a visit wakes it
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
   min_machines_running = 0
 
-# Journeys persist across deploys and restarts. Without this, every deploy
-# would hand the family a fresh, empty Middle-earth.
-[mounts]
-  source = "hobbit_data"
-  destination = "/data"
-
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"                 # the game is tiny; the model runs elsewhere
+  size = 'shared-cpu-1x'
+  memory = '256mb'

@@ -180,9 +180,16 @@ class Handler(BaseHTTPRequestHandler):
             name = normalise_name((query.get("name") or [""])[0])
             if not name:
                 return self._json(400, {"error": "bad name"})
+            # Don't create the game here: a brand-new player is offered the
+            # choice of mode first, and get() would create it in the default
+            # mode before they could choose. So report existence, and only
+            # touch the session when there is already one.
+            if not self.store.has(name):
+                return self._json(200, {"name": name, "new": True, "lines": []})
             session = self.store.get(name)
             return self._json(200, {
                 "name": name,
+                "new": False,
                 "lines": session.transcript,
                 "over": session.game.won or session.game.lost,
             })
@@ -213,7 +220,11 @@ class Handler(BaseHTTPRequestHandler):
                                         "A name, please -- letters and spaces."})
             text = str(data.get("text", ""))[:200]
             word = text.strip().lower()
-            session = self.store.get(name)
+            # The chosen mode only matters when this player's game is created
+            # here for the first time; get() ignores it for a game that already
+            # exists, so a returning player is unaffected.
+            authentic = True if data.get("mode") == "purist" else None
+            session = self.store.get(name, authentic=authentic)
             game = session.game
 
             if word in ("restart", "start again", "begin again", "new game"):
