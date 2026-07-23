@@ -8,8 +8,8 @@ def test_look_marks_locked_exits_in_enhanced_mode():
     game.player.location_id = "trolls_clearing"
     shown = ui.present(game.describe_location(game.player), "standard")
     exits_row = next(r for r in shown[0].split("\n") if r.startswith("Exits:"))
-    assert "down" in exits_row and "(locked)" in exits_row
-    assert ui.ADDITION_COLOR in exits_row  # the courtesy marker is coloured
+    assert "down" in exits_row and "(locked)" in exits_row  # the courtesy marker
+    assert "\033[" not in exits_row                          # but no longer tinted
     # and once opened, the marker goes away
     game.world.get("troll_cave").locked = False
     shown = ui.present(game.describe_location(game.player), "standard")

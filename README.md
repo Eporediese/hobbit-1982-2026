@@ -205,10 +205,12 @@ It reproduces the *classes* of constraint the original worked under; it is not
 a byte-exact reproduction of Beam Software's game, which was never available
 to copy from.
 
-In the enhanced game, anything added for this recreation is **shown in cyan**,
-so you can always tell a modern addition from 1982 without being lectured
-about it. That is the whole of the annotation: there is no commentary layer
-and nothing to configure.
+Early builds tinted anything added for this recreation in cyan, so you could
+tell a modern touch from 1982 at a glance. That marking has been removed: the
+enhanced game is reworked thoroughly enough that nearly every line is "modern",
+and colouring almost all of it said nothing. If you want the unimproved
+article, play the purist game -- it *is* the 1982 design, not an annotation of
+it. There is no commentary layer and nothing to configure.
 
 Command chaining (`and`/`then`) and addressing companions directly are kept in
 every mode -- they are *not* additions. Inglish did both in 1982, and taking

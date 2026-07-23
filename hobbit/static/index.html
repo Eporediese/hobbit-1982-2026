@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Hobbit</title>
 <style>
-  :root { --bg:#14110e; --fg:#e8dcc8; --dim:#8a7f6d; --added:#7fd6d0; --echo:#c9a227; }
+  :root { --bg:#14110e; --fg:#e8dcc8; --dim:#8a7f6d; --accent:#7fd6d0; --echo:#c9a227; }
   * { box-sizing:border-box }
   body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 ui-monospace,
          "Cascadia Mono",Menlo,Consolas,monospace; height:100dvh; display:flex;
@@ -14,7 +14,6 @@
   #scroll { flex:1; overflow-y:auto; padding:1rem; white-space:pre-wrap;
             overflow-wrap:anywhere }
   #scroll div { min-height:1.55em }
-  .added { color:var(--added) }
   .echo  { color:var(--echo) }
   .pending { color:var(--dim); font-style:italic; animation:pulse 1.1s ease-in-out infinite }
   @keyframes pulse { 0%,100% { opacity:.4 } 50% { opacity:.9 } }
@@ -22,7 +21,7 @@
   form { display:flex; gap:.5rem; padding:.75rem 1rem; border-top:1px solid #2b2620 }
   input { flex:1; background:#1d1a15; color:var(--fg); border:1px solid #35302a;
           border-radius:6px; padding:.6rem .75rem; font:inherit }
-  input:focus { outline:2px solid var(--added); outline-offset:-1px }
+  input:focus { outline:2px solid var(--accent); outline-offset:-1px }
   button { background:#35302a; color:var(--fg); border:0; border-radius:6px;
            padding:.6rem 1rem; font:inherit; cursor:pointer }
   .panel { margin:auto; padding:2rem; max-width:28rem; text-align:center }
@@ -34,7 +33,7 @@
   .choice { display:flex; flex-direction:column; gap:.35rem; padding:1rem;
             background:#1d1a15; border:1px solid #35302a; border-radius:8px;
             cursor:pointer; font:inherit; color:var(--fg) }
-  .choice:hover, .choice:focus { border-color:var(--added); outline:none }
+  .choice:hover, .choice:focus { border-color:var(--accent); outline:none }
   .choice b { color:var(--fg); font-size:1.05rem }
   .choice span { color:var(--dim); font-size:.9rem; line-height:1.45 }
 </style>
@@ -72,8 +71,7 @@
     <button class="choice" data-mode="enhanced">
       <b>The Enhanced Game</b>
       <span>The recreation: a world that moves while you're away, companions
-            with a voice, the puzzles made winnable. Additions are marked in
-            cyan. Recommended.</span>
+            with a voice, the puzzles made winnable. Recommended.</span>
     </button>
     <button class="choice" data-mode="purist">
       <b>The Purist Game</b>

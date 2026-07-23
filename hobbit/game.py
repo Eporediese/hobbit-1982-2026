@@ -120,8 +120,10 @@ class Game:
         #                 unexaminable wall flavour, the scenery system is off,
         #                 and open/close use the original quirky current-room
         #                 logic (so some rooms are unreachable).
-        #   'standard' -- the enhanced game; added features shown in cyan.
+        #   'standard' -- the enhanced game (the default).
         # The 'authentic' argument is just sugar for starting in 'purist'.
+        # (This field also drives the `authentic` property below; additions are
+        # no longer visually marked, so it no longer affects presentation.)
         self.annotation_level = "purist" if authentic else ui.DEFAULT_LEVEL
         # When an LLM client is supplied, party NPCs get the hybrid LLMBrain
         # (AI dialogue + narration over the same rule-based actions). Absent

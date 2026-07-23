@@ -2,18 +2,20 @@ from hobbit.game import Game
 from hobbit.ui import Note, present
 
 
-def test_present_purist_strips_color_but_keeps_note_text():
-    """Note text is real content, just newly written -- purist shows it
-    unflagged rather than hiding it."""
-    out = present([Note("Added feature")], level="purist")
-    assert out == ["Added feature"]
+def test_present_keeps_note_text_as_plain_content():
+    """Note text is real content, just newly written -- it is shown, not
+    hidden. It used to be tinted cyan; now it reads like any other line."""
+    assert present([Note("Added feature")], level="purist") == ["Added feature"]
+    assert present([Note("Added feature")], level="standard") == ["Added feature"]
 
 
-def test_present_standard_colors_notes():
-    out = present([Note("Added feature")], level="standard")
-    assert len(out) == 1
-    assert "Added feature" in out[0]
-    assert "\033[96m" in out[0]
+def test_additions_are_no_longer_coloured():
+    """The cyan marking of additions was removed, so no output carries an ANSI
+    escape at either level."""
+    for level in ("purist", "standard"):
+        out = present([Note("Added feature")], level=level)
+        assert out == ["Added feature"]
+        assert "\033[" not in out[0]
 
 
 def test_present_leaves_plain_messages_alone_but_for_the_opening_letter():
@@ -23,20 +25,13 @@ def test_present_leaves_plain_messages_alone_but_for_the_opening_letter():
 
 def test_present_capitalises_lines_that_open_with_a_lower_case_name():
     """Several characters are named in lower case on purpose ('wood-elf guard',
-    'giant spider'), which reads right mid-line but not at the start of one."""
+    'giant spider'), which reads right mid-line but not at the start of one.
+    The level no longer changes the output."""
     for level in ("purist", "standard"):
         assert present(["giant spider looms here."], level=level) == \
             ["Giant spider looms here."]
-        assert present([Note("wood-elf guard bars the way.")], level=level)[0] \
-            .endswith("Wood-elf guard bars the way.\033[0m"
-                      if level != "purist" else "Wood-elf guard bars the way.")
-
-
-def test_capitalising_does_not_reach_inside_a_colour_escape():
-    """Regression: the first *letter* of '\\033[96m== Room ==' is the 'm' of
-    the escape sequence itself."""
-    out = present([f"{'\033[96m'}== Hobbiton Road ==\033[0m"], level="standard")
-    assert "\033[96m== Hobbiton Road ==" in out[0]
+        assert present([Note("wood-elf guard bars the way.")], level=level) == \
+            ["Wood-elf guard bars the way."]
 
 
 def test_the_mode_cannot_be_changed_mid_journey():
@@ -79,17 +74,23 @@ def test_examine_map_by_game():
     assert any("no map" in m.lower() for m in shown)
     assert not any("moon-letters" in m.lower() for m in shown)
 
-    # standard: real item, description coloured cyan
+    # standard: real item with a full description -- and, now, no colour
     game.annotation_level = "standard"
     shown = ui.present(game.process_player_input("examine map"), "standard")
-    assert any("\033[96m" in m and "moon-letters" in m.lower() for m in shown)
+    assert any("moon-letters" in m.lower() for m in shown)
+    assert not any("\033[" in m for m in shown)
 
 
-def test_plain_items_stay_uncolored_when_examined():
+def test_no_message_carries_a_colour_escape():
+    """Nothing anywhere is tinted now -- a sweep of the common commands finds no
+    ANSI escape in any line."""
     from hobbit import ui
     game = Game(seed=1)
-    shown = ui.present(game.process_player_input("examine torch"), "standard")
-    assert not any("\033[" in m for m in shown)
+    game.player.inventory = ["sting", "thorin_map"]
+    for cmd in ("look", "examine map", "examine torch", "inventory", "take map",
+                "mode", "help", "status", "open door", "close door"):
+        for m in ui.present(game.process_player_input(cmd), "standard"):
+            assert "\033[" not in m, f"{cmd!r} still emits a colour escape: {m!r}"
 
 
 def test_previously_unreachable_room_still_describes_itself():
@@ -119,41 +120,37 @@ def test_nothing_narrates_its_own_changelog_at_the_player():
             assert "bugfix" not in m.lower(), f"{cmd!r} still mentions a bugfix: {m}"
 
 
-def test_inventory_listing_colors_only_the_added_item_name():
+def test_inventory_listing_is_the_same_at_both_levels():
     from hobbit import ui
     game = Game(seed=1)
     game.player.inventory = ["thorin_map", "torch"]  # gear only, no loaves
 
     line = game.process_player_input("inventory")[0]
 
-    purist = ui.present([line], "purist")[0]
-    assert purist.startswith("You are carrying: old map, torch.")
-
-    standard = ui.present([line], "standard")[0]
-    assert f"{ui.ADDITION_COLOR}old map{ui.RESET}" in standard
-    assert ", torch." in standard  # torch itself stays uncoloured
-    assert standard.count(ui.ADDITION_COLOR) == 1  # only the map, not the line
+    for level in ("purist", "standard"):
+        shown = ui.present([line], level)[0]
+        assert shown.startswith("You are carrying: old map, torch.")
+        assert "\033[" not in shown
 
 
-def test_you_see_line_colors_only_the_added_item_name():
+def test_you_see_line_lists_the_added_item_without_colour():
     from hobbit import ui
     game = Game(seed=1)
     line = next(m for m in game.process_player_input("look") if "You see" in m)
 
-    purist = ui.present([line], "purist")[0]
-    assert "old map" in purist and "\033[" not in purist
-
-    standard = ui.present([line], "standard")[0]
-    assert f"{ui.ADDITION_COLOR}old map{ui.RESET}" in standard
-    assert "walking stick" in standard and f"{ui.ADDITION_COLOR}walking stick" not in standard
+    for level in ("purist", "standard"):
+        shown = ui.present([line], level)[0]
+        assert "old map" in shown and "walking stick" in shown
+        assert "\033[" not in shown
 
 
-def test_take_and_wield_messages_color_only_added_item_names():
+def test_take_messages_name_the_item_without_colour():
     from hobbit import ui
     game = Game(seed=1)
 
     shown = ui.present(game.process_player_input("take map"), "standard")
-    assert any(f"{ui.ADDITION_COLOR}old map{ui.RESET}" in m for m in shown)
+    assert any("old map" in m for m in shown)
+    assert not any("\033[" in m for m in shown)
 
     shown = ui.present(game.process_player_input("take torch"), "standard")
-    assert not any(ui.ADDITION_COLOR in m for m in shown)
+    assert not any("\033[" in m for m in shown)

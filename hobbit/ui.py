@@ -1,28 +1,28 @@
 """Terminal presentation helpers.
 
 Some things in this recreation are not in the 1982 original -- the scenery
-examine system, and a few parser conveniences (command chaining, direct
-NPC addressing). Those messages are wrapped in Note().
+examine system, a few parser conveniences (command chaining, direct NPC
+addressing), the companions' voices. Early builds tinted every such addition
+cyan so you could tell new from old at a glance.
 
-There are two ways to see the game, settled when it starts (see commands.py):
+That marking is gone. The enhanced game is so thoroughly reworked that nearly
+every line is "modern", and colouring almost all of it told you nothing. A
+player who wants the unimproved article plays the purist game, which *is* the
+1982 design rather than a running annotation of it.
 
-  purist    -- no colour, no meta-commentary. Note text still appears (it's
-               real game content, just newly written) but unflagged.
-  standard  -- the default. Note text is coloured cyan, so you can always
-               tell a modern addition from 1982.
+`Note`, `mark()` and `item_display_name()` survive as plain semantic seams --
+in the code they still say "this is added content", they just no longer change
+how it looks.
 
-There used to be a third, 'verbose', which annotated in amber exactly which
-defect each fix addressed. It was dropped: keeping that commentary accurate
-meant re-documenting the whole game every time it changed, and a player who
-wants the unimproved article can simply play purist, which *is* the original
-design rather than a description of it.
+There are two games, settled when one starts (see commands.py / game.py):
+
+  purist    -- reverted prose and the original's quirky, sometimes unwinnable
+               mechanics.
+  standard  -- the enhanced game (the default).
 """
 from __future__ import annotations
 
 import os
-
-RESET = "\033[0m"
-ADDITION_COLOR = "\033[96m"  # bright cyan
 
 LEVELS = ("purist", "standard")
 DEFAULT_LEVEL = "standard"
@@ -34,35 +34,31 @@ def enable_ansi_on_windows() -> None:
 
 
 def note_line(text: str) -> str:
-    """Cyan-wrap a one-off system/meta line (e.g. the AI-enabled notice)."""
-    return f"{ADDITION_COLOR}{text}{RESET}"
+    """A one-off system/meta line (e.g. the AI-enabled notice). Once cyan, now
+    plain -- kept as a named seam so its call sites read clearly."""
+    return text
 
 
 class Note(str):
-    """A message flagged as a modern addition, not part of the 1982 original."""
+    """A message that is a modern addition rather than 1982 original. Once
+    rendered in cyan; now indistinguishable in output, kept as a code-level
+    marker of provenance."""
     __slots__ = ()
 
 
-# Sentinel control characters marking an added-feature *span* inside an
-# otherwise ordinary line, e.g. just an item's name inside "You are
-# carrying: old map, torch." -- unlikely to ever appear in real game text.
-_MARK_START = "\x01"
-_MARK_END = "\x02"
-
-
 def mark(text: str) -> str:
-    """Wrap a substring of a larger message (an item's name, typically) so
-    'present' can color just that span, without tagging the whole line as
-    a Note. Use this when a message mixes ordinary and added content --
-    e.g. an inventory listing where only one item is new."""
-    return f"{_MARK_START}{text}{_MARK_END}"
+    """Once wrapped a span (an item's name, an exit tag) so just that part of a
+    line could be tinted. The tinting is gone, so this is now identity -- kept
+    so its call sites, which record *what* was added, don't all have to
+    change."""
+    return text
 
 
 def item_display_name(item) -> str:
-    """An item's name for use inside an ordinary sentence ('You take the
-    X.', 'You see: X, Y.') -- marked so it colors as an added feature
-    wherever it appears, if the item itself is one."""
-    return mark(item.name) if item.added else item.name
+    """An item's name for use inside an ordinary sentence. Plain now -- added
+    items are no longer tinted -- but kept as the one place item names are
+    formatted for prose."""
+    return item.name
 
 
 def join_names(names: list[str]) -> str:
@@ -96,16 +92,9 @@ def sentence(text: str) -> str:
     """Capitalise the opening letter. Names like 'the Great Goblin' and
     'goblin scout' are lowercase by design mid-sentence, but must not start
     one ('the Great Goblin has been defeated!')."""
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        if ch == "\033":  # step over an ANSI colour escape, not into it
-            end = text.find("m", i)
-            i = len(text) if end == -1 else end + 1
-            continue
+    for i, ch in enumerate(text):
         if ch.isalpha():
             return text[:i] + ch.upper() + text[i + 1:]
-        i += 1
     return text
 
 
@@ -127,45 +116,19 @@ def with_article(name: str) -> str:
 
 
 def autolook_lines(described: list[str]) -> list[str]:
-    """Turn a describe_location() result into an auto-look shown after a
-    move: only the room title (== Name ==) is coloured, marking it as the
-    modern auto-look; the description, occupants, items, and exits stay in
-    normal formatting."""
-    out: list[str] = []
-    for line in described:
-        rows = line.split("\n")
-        if rows and rows[0].startswith("=="):
-            rows[0] = f"{ADDITION_COLOR}{rows[0]}{RESET}"
-        # Returned as a plain string so present() still colours inline item
-        # marks in the body; the title's colour is embedded literally.
-        out.append("\n".join(rows))
-    return out
-
-
-def _apply_inline_marks(message: str, level: str) -> str:
-    if _MARK_START not in message:
-        return message
-    if level == "purist":
-        return message.replace(_MARK_START, "").replace(_MARK_END, "")
-    return message.replace(_MARK_START, ADDITION_COLOR).replace(_MARK_END, RESET)
+    """A describe_location() result shown as the auto-look after a move. The
+    room title was once tinted to mark the auto-look as a modern convenience;
+    now it reads just as an ordinary look would."""
+    return list(described)
 
 
 def present(messages: list[str], level: str = DEFAULT_LEVEL) -> list[str]:
-    """Colour a batch of messages for the game being played. Note lines (and
-    inline mark() spans) are always kept -- they're real content -- coloured
-    at 'standard' and left plain at 'purist'."""
-    out: list[str] = []
-    for message in messages:
-        # Several characters are named in lower case on purpose ("wood-elf
-        # guard", "giant spider", "goblin scout"), which reads correctly in the
-        # middle of a line but not at the start of one. Capitalising here, at
-        # the one place everything is rendered, saves remembering it at every
-        # message that happens to begin with a name.
-        message = sentence(message) if type(message) is str else message
-        if isinstance(message, Note):
-            text = sentence(str(message))
-            out.append(f"{ADDITION_COLOR}{text}{RESET}"
-                       if level != "purist" else text)
-            continue
-        out.append(_apply_inline_marks(message, level))
-    return out
+    """Render a batch of game messages for display.
+
+    Its one remaining job is to capitalise the opening letter of each line --
+    several characters are named in lower case on purpose ('goblin scout',
+    'wood-elf guard'), which reads right mid-line but not at the start of one,
+    and doing it here saves remembering it at every message. `level` is still
+    accepted so callers need not change, but no longer alters the output: the
+    cyan marking of additions was removed."""
+    return [sentence(m) if isinstance(m, str) else m for m in messages]

@@ -21,16 +21,15 @@ def test_take_item_by_head_noun():
     assert any("take" in m.lower() for m in messages)
 
 
-def test_autolook_shows_room_after_move_with_only_the_title_colored():
+def test_autolook_shows_the_room_after_a_move():
     game = Game(seed=1)  # enhanced/standard
     msgs = game.process_player_input("go east")
     shown = present(msgs, game.annotation_level)
     block = next(m for m in shown if "Hobbiton Road" in m)
-    # the title line is coloured...
-    assert "\033[96m== Hobbiton Road ==\033[0m" in block
-    # ...but the description body is plain (no colour code on that line)
-    desc_row = next(r for r in block.split("\n") if "dusty lane" in r)
-    assert "\033[" not in desc_row
+    # the room is shown in full -- title and description -- and, now, plain
+    assert "== Hobbiton Road ==" in block
+    assert "dusty lane" in block
+    assert "\033[" not in block
 
 
 def test_no_autolook_without_moving():

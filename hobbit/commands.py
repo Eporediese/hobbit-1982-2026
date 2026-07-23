@@ -911,10 +911,9 @@ def do_help(game: "Game", actor: Character, cmd: Command) -> list[str]:
                        "journey; start without '--purist' for the enhanced game.")
     else:
         lines.append(Note(
-            "You are playing the ENHANCED game, with added features shown in cyan. "
-            "The purist game is a separate choice made when a new game begins, "
-            "not a switch you can throw mid-journey. 'mode' reports which "
-            "you're in."))
+            "You are playing the ENHANCED game. The purist game is a separate "
+            "choice made when a new game begins, not a switch you can throw "
+            "mid-journey. 'mode' reports which you're in."))
     return lines
 
 
@@ -935,7 +934,7 @@ def do_mode(game: "Game", actor: Character, cmd: Command) -> list[str]:
                 "broken locks -- some rooms are unreachable, and the game may not "
                 "be winnable.", Note(_MODE_IS_FIXED)]
     return ["Mode: ENHANCED. Corrected descriptions, the map as a real item, "
-            "working locks and scenery. Additions are shown in cyan.",
+            "working locks and scenery.",
             Note(_MODE_IS_FIXED)]
 
 

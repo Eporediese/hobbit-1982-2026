@@ -12,8 +12,8 @@ The API is deliberately small:
     GET  /api/state         resume: scrollback and where you stand
     POST /api/command       take a turn
 
-Everything the game prints comes back as HTML fragments rather than ANSI, so
-the cyan that marks a modern addition survives the trip to the browser.
+Everything the game prints comes back as HTML fragments, escaped so the browser
+renders text as text.
 """
 from __future__ import annotations
 
@@ -34,30 +34,14 @@ from .sessions import SessionStore, normalise_name
 
 PAGE = Path(__file__).resolve().parent / "static" / "index.html"
 
-# ANSI -> HTML. The game only ever emits one colour (the cyan that marks an
-# addition) plus reset, so this stays a two-case translation rather than a
-# terminal emulator.
+# The game no longer emits colour (the cyan marking of additions was removed),
+# so any stray ANSI escape is simply stripped before the line is escaped.
 _ANSI = re.compile(r"\033\[([0-9;]*)m")
 
 
 def to_html(line: str) -> str:
-    """One printed line as safe HTML, keeping the colour it was printed in."""
-    out: list[str] = []
-    open_spans = 0
-    pos = 0
-    for match in _ANSI.finditer(line):
-        out.append(html.escape(line[pos:match.start()]))
-        code = match.group(1)
-        if code in ("0", ""):
-            out.append("</span>" * open_spans)
-            open_spans = 0
-        elif code == "96":
-            out.append('<span class="added">')
-            open_spans += 1
-        pos = match.end()
-    out.append(html.escape(line[pos:]))
-    out.append("</span>" * open_spans)
-    return "".join(out)
+    """One printed line as safe HTML."""
+    return html.escape(_ANSI.sub("", line))
 
 
 def render(messages, level: str) -> list[str]:

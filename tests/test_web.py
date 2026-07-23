@@ -8,7 +8,6 @@ import urllib.error
 
 import pytest
 
-from hobbit import ui
 from hobbit.web import Gate, to_html, render, serve
 
 
@@ -19,16 +18,11 @@ def test_a_plain_line_is_escaped_not_marked_up():
     assert to_html("<not a tag>") == "&lt;not a tag&gt;"
 
 
-def test_the_added_colour_becomes_a_span():
-    line = f"{ui.ADDITION_COLOR}old map{ui.RESET}"
-    assert to_html(line) == '<span class="added">old map</span>'
-
-
-def test_an_unclosed_colour_span_is_still_closed():
-    """A room title is coloured and never reset before the newline splits it;
-    the HTML must not leak an open span into the next line."""
-    assert to_html(f"{ui.ADDITION_COLOR}== Bag End ==") \
-        == '<span class="added">== Bag End ==</span>'
+def test_any_stray_colour_escape_is_stripped_not_rendered():
+    """The game no longer emits colour, and any leftover ANSI escape must be
+    removed rather than shown or turned into a span."""
+    assert to_html("\033[96mold map\033[0m") == "old map"
+    assert to_html("\033[96m== Bag End ==") == "== Bag End =="
 
 
 def test_render_splits_multiline_blocks_into_rows():

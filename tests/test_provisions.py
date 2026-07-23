@@ -28,12 +28,13 @@ def test_everyone_starts_with_a_single_loaf():
     assert bombur.max_carry > game.player.max_carry  # Bombur can lug more
 
 
-def test_food_source_clause_is_colored_and_reverts_in_purist():
+def test_food_source_clause_shows_in_enhanced_and_reverts_in_purist():
     from hobbit import ui
     game = Game(seed=1)
     game.player.location_id = "green_dragon_inn"
     block = ui.present(game.describe_location(game.player), game.annotation_level)[0]
-    assert f"{ui.ADDITION_COLOR}Baskets of fresh loaves" in block
+    assert "Baskets of fresh loaves" in block
+    assert "\033[" not in block           # shown, but no longer tinted
     assert "cheerful inn" in block
 
     pure = Game(seed=1, authentic=True)
