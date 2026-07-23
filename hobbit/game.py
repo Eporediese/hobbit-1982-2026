@@ -753,10 +753,15 @@ class Game:
                 and self.is_hostile_pair(fighter, c)]
 
     def choose_combat_target(self, npc: "NPC", loc) -> str | None:
-        """Pick which foe a companion swings at. The company spreads across
-        the foes present -- each fighter keeps to their own so long as it
-        lives -- but when a leader has called for aid here, everyone piles
-        onto the rally target until it falls."""
+        """Pick which foe a fighter swings at. Both sides spread across the foes
+        present -- each fighter keeps to their own so long as it lives -- but
+        when a leader has called for aid here, the company piles onto the rally
+        target until it falls.
+
+        The spreading is what keeps three trolls from all pinning the same
+        dwarf and killing him in a round while their fellows die one by one:
+        each troll takes a different member of the company, as they each seized
+        a dwarf in the tale."""
         hostiles = self.combat_hostiles(npc, loc)
         if not hostiles:
             npc.combat_target = None
@@ -767,13 +772,16 @@ class Game:
             return rally
         if npc.combat_target in hostiles:
             return npc.combat_target
-        # Spread out: take the foe the fewest companions here are already on.
+        # Spread out: take the foe the fewest of npc's OWN side are already on.
+        # Only same-side fighters ever target npc's hostiles (the company swing
+        # at monsters, monsters swing at the company), so counting everyone
+        # already set on each foe counts allies without a side check.
         load = {h: 0 for h in hostiles}
         for cid in loc.npcs:
             other = self.characters.get(cid)
             if (other is not None and other is not npc and other.alive
-                    and isinstance(other, NPC) and other.def_.is_party
-                    and other.combat_target in load):
+                    and isinstance(other, NPC)
+                    and getattr(other, "combat_target", None) in load):
                 load[other.combat_target] += 1
         target = min(hostiles, key=lambda h: (load[h], hostiles.index(h)))
         npc.combat_target = target

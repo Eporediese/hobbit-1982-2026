@@ -40,6 +40,25 @@ def test_company_spreads_across_multiple_foes():
     assert set(picks) <= set(foes)
 
 
+def test_monsters_spread_across_the_company_too():
+    """The trolls used to all pin the same dwarf and kill him in a round while
+    the rest died one by one -- the spread logic only counted the company's
+    load, so every troll fell through to the first defender. Both sides spread
+    now: three trolls take three different members of the company."""
+    game = Game(seed=3)
+    room = _two_monsters_room(game)
+    defenders = ("balin", "dwalin", "fili", "kili", "oin")
+    for cid in defenders:
+        _place(game, cid, room)
+    picks = []
+    for tid in ("troll_tom", "troll_bert", "troll_william"):
+        game.characters[tid].combat_target = None
+        picks.append(game.choose_combat_target(game.characters[tid],
+                                                game.world.get(room)))
+    assert len(set(picks)) == 3            # three trolls, three different dwarves
+    assert set(picks) <= set(defenders)
+
+
 def test_a_fighter_keeps_to_its_target_until_it_dies():
     game = Game(seed=3)
     room = _two_monsters_room(game)
