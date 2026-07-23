@@ -36,6 +36,8 @@
   .choice:hover, .choice:focus { border-color:var(--accent); outline:none }
   .choice b { color:var(--fg); font-size:1.05rem }
   .choice span { color:var(--dim); font-size:.9rem; line-height:1.45 }
+  .banner { display:block; width:100%; max-width:22rem; margin:0 auto 1.5rem }
+  .banner svg { display:block; width:100% }
 </style>
 
 <!-- The shared word, if the server asks for one -->
@@ -90,9 +92,71 @@
   <button>Go</button>
 </form>
 
+<!-- The round door of Bag End, then and now: a 1982 green-screen line drawing
+     beside a warm, full-colour version. Painted onto the landing screens (the
+     clipPath id is made unique per copy in script). -->
+<template id="banner-art">
+  <div class="banner">
+    <svg viewBox="0 0 440 180" role="img" xmlns="http://www.w3.org/2000/svg">
+      <title>The Hobbit, then and now</title>
+      <desc>The round green door of Bag End as a 1982 green-screen line drawing
+            beside a warm, full-colour version. Forty-four years apart.</desc>
+      <defs><clipPath id="scr"><rect x="232" y="8" width="200" height="140" rx="7"/></clipPath></defs>
+
+      <rect x="8" y="8" width="200" height="140" rx="7" fill="#0a0a08" stroke="#2b2620"/>
+      <g stroke="#33ff66" stroke-width="1.6" fill="none" stroke-linecap="round">
+        <path d="M22 140 Q108 74 194 140"/>
+        <circle cx="108" cy="106" r="26"/>
+        <circle cx="108" cy="106" r="17"/>
+        <circle cx="60" cy="120" r="8"/>
+        <line x1="108" y1="74" x2="108" y2="56"/>
+        <circle cx="108" cy="46" r="10"/>
+        <line x1="98" y1="140" x2="80" y2="147"/>
+        <line x1="118" y1="140" x2="136" y2="147"/>
+      </g>
+      <circle cx="120" cy="106" r="2.4" fill="#33ff66"/>
+
+      <rect x="232" y="8" width="200" height="140" rx="7" fill="#c6dde8" stroke="#2b2620"/>
+      <g clip-path="url(#scr)">
+        <path d="M232 149 Q332 68 432 149 Z" fill="#6aa845"/>
+        <path d="M232 149 Q332 70 432 149" fill="none" stroke="#4c8232" stroke-width="1.5"/>
+        <rect x="266" y="60" width="6" height="24" fill="#6b4a2b"/>
+        <circle cx="256" cy="60" r="10" fill="#6cae48"/>
+        <circle cx="282" cy="60" r="10" fill="#6cae48"/>
+        <circle cx="269" cy="53" r="15" fill="#5f9e3f"/>
+        <polygon points="320,134 344,134 360,148 302,148" fill="#d8c48a"/>
+        <circle cx="332" cy="108" r="27" fill="#407d3a" stroke="#7a4e28" stroke-width="3.5"/>
+        <line x1="332" y1="82" x2="332" y2="134" stroke="#2f5e2c" stroke-width="1"/>
+        <circle cx="348" cy="108" r="3" fill="#e8c14a"/>
+        <circle cx="288" cy="120" r="9" fill="#ffd97a" stroke="#7a4e28" stroke-width="2"/>
+        <circle cx="376" cy="115" r="7" fill="#ffd97a" stroke="#7a4e28" stroke-width="2"/>
+      </g>
+
+      <text x="108" y="167" text-anchor="middle" fill="#8a7f6d"
+            font-family="ui-monospace,monospace" font-size="12">1982</text>
+      <text x="332" y="167" text-anchor="middle" fill="#8a7f6d"
+            font-family="ui-monospace,monospace" font-size="12">2026</text>
+    </svg>
+  </div>
+</template>
+
 <script>
 const $ = s => document.querySelector(s);
 let name = localStorage.getItem("hobbit-name") || "";
+
+// Paint the then/now banner onto the landing screens. The template's clipPath
+// id has to be made unique in each copy, or the second copy would reference the
+// first's clip.
+(function paintBanner() {
+  const tpl = document.getElementById("banner-art");
+  document.querySelectorAll("#gate, #namepanel").forEach((panel, i) => {
+    const frag = tpl.content.cloneNode(true);
+    const clip = frag.querySelector("clipPath");
+    const clipped = frag.querySelector("[clip-path]");
+    if (clip && clipped) { clip.id = "scr" + i; clipped.setAttribute("clip-path", `url(#scr${i})`); }
+    panel.insertBefore(frag, panel.firstChild);
+  });
+})();
 
 function only(id) {
   for (const el of ["gate", "namepanel", "modepanel", "bar", "scroll", "turn"])
