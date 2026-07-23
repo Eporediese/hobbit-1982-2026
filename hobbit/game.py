@@ -1181,7 +1181,7 @@ class Game:
                 description = f"{description} {ui.mark(loc.added_description)}"
 
         lines = [f"== {loc.name} =="]
-        if loc.dark and actor.light_remaining <= 0:
+        if loc.dark and not self.room_is_lit(loc.id):
             lines.append("It is pitch dark. You can make out very little.")
             return ["\n".join(lines)]
         lines.append(description)
@@ -1702,7 +1702,8 @@ class Game:
         if leader.location_id == self.player.location_id:
             return []
         dest = self.world.get(leader.location_id)
-        if (dest.dark and self.player.light_remaining <= 0
+        if (dest.dark and not self.room_is_lit(dest.id)
+                and not self.carries_light(self.player)
                 and not self.player_can_see_in_dark(self.player)):
             self.player_follow = None
             return [f"{leader.name} disappears into the dark ahead; you cannot follow "

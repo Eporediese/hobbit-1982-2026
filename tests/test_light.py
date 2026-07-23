@@ -131,6 +131,58 @@ def test_the_dark_still_stops_you_going_somewhere_new():
         assert player.location_id == here
 
 
+def _cleared_clearing(game):
+    """The Trolls' Clearing with the trolls dead and the cave below unlocked,
+    Bilbo standing there carrying no light of his own."""
+    clearing = game.world.get("trolls_clearing")
+    game.player.location_id = "trolls_clearing"
+    for t in ("troll_tom", "troll_bert", "troll_william"):
+        game.characters[t].alive = False
+        if t in clearing.npcs:
+            clearing.npcs.remove(t)
+    game.world.get("troll_cave").locked = False
+    game.player.inventory = []
+    game.player.trail = []
+    return clearing
+
+
+def test_a_companions_torch_lights_the_way_down_for_bilbo():
+    """The one torch serves the whole party. Bilbo, carrying none himself, can
+    go down into the dark when a companion holds the lit brand -- whether at his
+    side to come down with him, or already gone ahead into the dark below."""
+    # Balin beside Bilbo with the lit torch -> down together
+    game = Game(seed=1)
+    clearing = _cleared_clearing(game)
+    balin = game.characters["balin"]
+    game.world.get(balin.location_id).npcs.remove("balin")
+    balin.location_id = "trolls_clearing"
+    clearing.npcs.append("balin")
+    balin.light_remaining = 10
+    game.process_player_input("down")
+    assert game.player.location_id == "troll_cave"
+
+    # Balin already below, holding the torch -> Bilbo follows the light down
+    game = Game(seed=1)
+    _cleared_clearing(game)
+    balin = game.characters["balin"]
+    game.world.get(balin.location_id).npcs.remove("balin")
+    balin.location_id = "troll_cave"
+    game.world.get("troll_cave").npcs.append("balin")
+    balin.light_remaining = 10
+    game.process_player_input("down")
+    assert game.player.location_id == "troll_cave"
+
+
+def test_the_dark_still_stops_bilbo_when_no_one_carries_a_light():
+    """The shared torch is the mercy; a party with no lit brand at all still
+    cannot walk into the black."""
+    game = Game(seed=1)
+    _cleared_clearing(game)      # nobody here has lit anything
+    msgs = " ".join(str(m) for m in game.process_player_input("down"))
+    assert "pitch dark" in msgs
+    assert game.player.location_id == "trolls_clearing"
+
+
 def test_a_companion_strikes_a_light_when_the_room_is_black():
     """The torch is no use in a pack, and nobody can strike a blow in the
     dark of Mirkwood."""

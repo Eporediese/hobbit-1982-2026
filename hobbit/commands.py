@@ -82,7 +82,12 @@ def do_go(game: "Game", actor: Character, cmd: Command) -> list[str]:
         return [f"The way {direction} is locked."]
     # Darkness only stops the player -- the seasoned dwarves and Gandalf press
     # on regardless (and may blunder into goblin-held dark, as in the tale).
-    if (actor.id == "bilbo" and dest.dark and actor.light_remaining <= 0
+    # The one torch serves the whole party: Bilbo can go where a companion
+    # carries it, whether that companion is here (to come down with him) or has
+    # already gone ahead with it into the dark below.
+    if (actor.id == "bilbo" and dest.dark
+            and not game.room_is_lit(actor.location_id)
+            and not game.room_is_lit(dest_id)
             and not game.player_can_see_in_dark(actor)):
         # ...but never into a trap. A torch that gutters out in the middle of
         # the tunnels leaves every way on dark, and a player who cannot move
